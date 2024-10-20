@@ -8,8 +8,8 @@
     "clean": "rm -rf dist/*",
     "debug:esm": "tsc --project tsconfig.json --noCheck --outDir dist/esm",
     "build:test": "tsc --project tsconfig.test.json --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/test",
-    "build:esm": "tsc --project tsconfig.json --outDir dist/esm",
-    "build:cjs": "tsc --project tsconfig.json --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/cjs",
+    "build:esm": "tsc --project tsconfig.json --declaration --outDir dist/esm",
+    "build:cjs": "tsc --project tsconfig.json --declaration --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/cjs",
     "build:bundle": "rollup --format umd --name eyamluate --globals '@bufbuild/protobuf/codegenv1:codegenv1,@bufbuild/protobuf:protobuf,yaml:YAML' --file ./dist/bundle/index.js ./dist/esm/index.js",
     "build:minify": "terser --compress --mangle --output ./dist/bundle/index.min.js -- ./dist/bundle/index.js"
   },
@@ -23,6 +23,8 @@
   "type": "module",
   "exports": {
     ".": {
+      "browser": "./dist/bundle/index.js",
+      "umd": "./dist/bundle/index.js",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     }
