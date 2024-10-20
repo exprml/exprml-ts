@@ -8,7 +8,7 @@ The language specification is available at https://github.com/exprml/exprml-lang
 ## Installation
 
 ```bash
-npm install @bufbuild/protobuf@2.2.0 exprml-ts@0.0.2
+npm install @bufbuild/protobuf@2.2.0 exprml-ts
 ```
 
 ## Examples
