@@ -5,9 +5,9 @@ const {test, describe} = jest;
 import {
     Config,
     DecodeInputSchema,
-    Decoder, EncodeOutput, EncodeOutputSchema, EvaluateInput,
+    Decoder, EvaluateInput,
     EvaluateInputSchema, EvaluateOutput, EvaluateOutput_Status, EvaluateOutputSchema,
-    Evaluator, Expr, Expr_Path, format, objValue,
+    Evaluator,  Expr_Path, format, objValue,
     ParseInputSchema,
     Parser,
     Value, Value_Type, ValueSchema
