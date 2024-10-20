@@ -6,6 +6,10 @@ const protobuf_1 = require("@bufbuild/protobuf");
 const value_pb_js_1 = require("./gen/pb/exprml/v1/value_pb.js");
 const expr_pb_js_1 = require("./gen/pb/exprml/v1/expr_pb.js");
 const path_js_1 = require("./path.js");
+const regexNonIdentChars = /[^$_a-zA-Z0-9]/g;
+const regexFunctionDefinition = /^\$[_a-zA-Z][_a-zA-Z0-9]*(\(\s*\)|\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*(\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*)*(\s*,)?\s*\))?$/;
+const regexForVariables = /^for\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*\)$/;
+const regexIdentifier = /^\$[_a-zA-Z][_a-zA-Z0-9]*$/;
 class Parser {
     parse(input) {
         try {
@@ -23,7 +27,7 @@ exports.Parser = Parser;
 function parseImpl(path, value) {
     switch (value.type) {
         case value_pb_js_1.Value_Type.STR:
-            if (/^\$[_a-zA-Z][_a-zA-Z0-9]*$/.test(value.str)) {
+            if (regexIdentifier.test(value.str)) {
                 return (0, protobuf_1.create)(expr_pb_js_1.ExprSchema, {
                     kind: expr_pb_js_1.Expr_Kind.REF,
                     path: path,
@@ -68,16 +72,15 @@ function parseImpl(path, value) {
                             throw new Error(`invalid definition: ${(0, path_js_1.format)((0, path_js_1.append)(path, "where", i))}: definition must contain one property`);
                         }
                         const prop = keys[0];
-                        const r = /^\$[_a-zA-Z][_a-zA-Z0-9]*(\(\s*\)|\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*(\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*)*(\s*,)?\s*\))?$/;
-                        if (!r.test(prop)) {
-                            throw new Error(`invalid definition: ${(0, path_js_1.format)((0, path_js_1.append)(path, "where", i, prop))}: definition must match ${r}`);
+                        if (!regexFunctionDefinition.test(prop)) {
+                            throw new Error(`invalid definition: ${(0, path_js_1.format)((0, path_js_1.append)(path, "where", i, prop))}: definition must match ${regexFunctionDefinition}`);
                         }
-                        const idents = /[^$_a-zA-Z0-9]/[Symbol.replace](prop, "")
+                        const idents = prop.replaceAll(regexNonIdentChars, "")
                             .split("$")
                             .map((s) => "$" + s);
                         defs.push((0, protobuf_1.create)(expr_pb_js_1.Eval_DefinitionSchema, {
-                            ident: idents[0],
-                            args: idents.slice(1),
+                            ident: idents[1],
+                            args: idents.slice(2),
                             body: parseImpl((0, path_js_1.append)(path, "where", i, prop), def.obj[prop]),
                         }));
                     }
@@ -122,7 +125,6 @@ function parseImpl(path, value) {
                 });
             }
             if ("do" in value.obj) {
-                const r = /^for\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*\)$/;
                 const iter = (0, protobuf_1.create)(expr_pb_js_1.IterSchema, {});
                 for (const prop of Object.keys(value.obj)) {
                     if (prop === "do") {
@@ -133,18 +135,12 @@ function parseImpl(path, value) {
                         iter.if = parseImpl((0, path_js_1.append)(path, "if"), value.obj["if"]);
                         continue;
                     }
-                    if (r.test(prop)) {
-                        const idents = [];
-                        for (const char of prop.slice(4, -1)) {
-                            if (char === '$') {
-                                idents.push(char);
-                            }
-                            else if (/[a-zA-Z0-9_]/.test(char)) {
-                                idents[idents.length - 1] += char;
-                            }
-                        }
-                        iter.posIdent = idents[0];
-                        iter.elemIdent = idents[1];
+                    if (regexForVariables.test(prop)) {
+                        const idents = prop.replaceAll(regexNonIdentChars, "")
+                            .split("$")
+                            .map((s) => "$" + s);
+                        iter.posIdent = idents[1];
+                        iter.elemIdent = idents[2];
                         iter.col = parseImpl((0, path_js_1.append)(path, prop), value.obj[prop]);
                         continue;
                     }
@@ -279,9 +275,8 @@ function parseImpl(path, value) {
                 }
             }
             {
-                const identRegexp = /^\$[_a-zA-Z][_a-zA-Z0-9]*$/;
-                if (!identRegexp.test(prop)) {
-                    throw new Error(`invalid Call: ${(0, path_js_1.format)(path)}: function call property '${prop}' must match '${identRegexp}'`);
+                if (!regexIdentifier.test(prop)) {
+                    throw new Error(`invalid Call: ${(0, path_js_1.format)(path)}: function call property '${prop}' must match '${regexIdentifier}'`);
                 }
                 const argsVal = value.obj[prop];
                 if (argsVal.type !== value_pb_js_1.Value_Type.OBJ) {
@@ -289,15 +284,15 @@ function parseImpl(path, value) {
                 }
                 const args = {};
                 for (const [key, val] of Object.entries(argsVal.obj)) {
-                    if (!identRegexp.test(key)) {
-                        throw new Error(`invalid Call: ${(0, path_js_1.format)((0, path_js_1.append)(path, prop, key))}: argument property '${key}' must match '${identRegexp}'`);
+                    if (!regexIdentifier.test(key)) {
+                        throw new Error(`invalid Call: ${(0, path_js_1.format)((0, path_js_1.append)(path, prop, key))}: argument property '${key}' must match '${regexIdentifier}'`);
                     }
                     args[key] = parseImpl((0, path_js_1.append)(path, prop, key), val);
                 }
                 return (0, protobuf_1.create)(expr_pb_js_1.ExprSchema, {
                     kind: expr_pb_js_1.Expr_Kind.CALL,
                     path: path,
-                    call: (0, protobuf_1.create)(expr_pb_js_1.CallSchema, { ident: prop, args: {} }),
+                    call: (0, protobuf_1.create)(expr_pb_js_1.CallSchema, { ident: prop, args: args }),
                 });
             }
         default:

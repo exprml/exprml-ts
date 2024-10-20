@@ -6,3 +6,8 @@ export { Expr_Kind, OpBinary_Op, OpUnary_Op, OpVariadic_Op, ArrSchema, CallSchem
 export { ParseInputSchema, ParseOutputSchema, } from "./gen/pb/exprml/v1/parser_pb.js";
 export { Decoder } from "./decoder.js";
 export { Encoder } from "./encoder.js";
+export { Parser } from "./parser.js";
+export { Evaluator, Config } from "./evaluator.js";
+export { find, newDefinition, register } from "./def_stack.js";
+export { append, format } from "./path.js";
+export { strValue, arrValue, boolValue, objValue, numValue } from "./value.js";

@@ -27,6 +27,11 @@ import {
 } from "./gen/pb/exprml/v1/expr_pb.js";
 import {append, format} from "./path.js";
 
+const regexNonIdentChars = /[^$_a-zA-Z0-9]/g;
+const regexFunctionDefinition = /^\$[_a-zA-Z][_a-zA-Z0-9]*(\(\s*\)|\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*(\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*)*(\s*,)?\s*\))?$/;
+const regexForVariables = /^for\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*\)$/;
+const regexIdentifier = /^\$[_a-zA-Z][_a-zA-Z0-9]*$/;
+
 export class Parser {
     parse(input: ParseInput): ParseOutput {
         try {
@@ -43,7 +48,7 @@ export class Parser {
 function parseImpl(path: Expr_Path, value: Value): Expr {
     switch (value.type) {
         case Value_Type.STR:
-            if (/^\$[_a-zA-Z][_a-zA-Z0-9]*$/.test(value.str)) {
+            if (regexIdentifier.test(value.str)) {
                 return create(ExprSchema, {
                     kind: Expr_Kind.REF,
                     path: path,
@@ -88,16 +93,15 @@ function parseImpl(path: Expr_Path, value: Value): Expr {
                             throw new Error(`invalid definition: ${format(append(path, "where", i))}: definition must contain one property`);
                         }
                         const prop = keys[0];
-                        const r = /^\$[_a-zA-Z][_a-zA-Z0-9]*(\(\s*\)|\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*(\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*)*(\s*,)?\s*\))?$/;
-                        if (!r.test(prop)) {
-                            throw new Error(`invalid definition: ${format(append(path, "where", i, prop))}: definition must match ${r}`);
+                        if (!regexFunctionDefinition.test(prop)) {
+                            throw new Error(`invalid definition: ${format(append(path, "where", i, prop))}: definition must match ${regexFunctionDefinition}`);
                         }
-                        const idents: string[] = /[^$_a-zA-Z0-9]/[Symbol.replace](prop, "")
+                        const idents: string[] = prop.replaceAll(regexNonIdentChars, "")
                             .split("$")
                             .map((s) => "$" + s)
                         defs.push(create(Eval_DefinitionSchema, {
-                            ident: idents[0],
-                            args: idents.slice(1),
+                            ident: idents[1],
+                            args: idents.slice(2),
                             body: parseImpl(append(path, "where", i, prop), def.obj[prop]),
                         }));
                     }
@@ -144,7 +148,6 @@ function parseImpl(path: Expr_Path, value: Value): Expr {
                 });
             }
             if ("do" in value.obj) {
-                const r = /^for\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*\)$/;
                 const iter = create(IterSchema, {});
                 for (const prop of Object.keys(value.obj)) {
                     if (prop === "do") {
@@ -155,17 +158,12 @@ function parseImpl(path: Expr_Path, value: Value): Expr {
                         iter.if = parseImpl(append(path, "if"), value.obj["if"]);
                         continue;
                     }
-                    if (r.test(prop)) {
-                        const idents: string[] = [];
-                        for (const char of prop.slice(4, -1)) {
-                            if (char === '$') {
-                                idents.push(char);
-                            } else if (/[a-zA-Z0-9_]/.test(char)) {
-                                idents[idents.length - 1] += char;
-                            }
-                        }
-                        iter.posIdent = idents[0];
-                        iter.elemIdent = idents[1];
+                    if (regexForVariables.test(prop)) {
+                        const idents: string[] = prop.replaceAll(regexNonIdentChars, "")
+                            .split("$")
+                            .map((s) => "$" + s);
+                        iter.posIdent = idents[1];
+                        iter.elemIdent = idents[2];
                         iter.col = parseImpl(append(path, prop), value.obj[prop]);
                         continue;
                     }
@@ -299,9 +297,8 @@ function parseImpl(path: Expr_Path, value: Value): Expr {
             }
         }
         {
-            const identRegexp = /^\$[_a-zA-Z][_a-zA-Z0-9]*$/;
-            if (!identRegexp.test(prop)) {
-                throw new Error(`invalid Call: ${format(path)}: function call property '${prop}' must match '${identRegexp}'`);
+            if (!regexIdentifier.test(prop)) {
+                throw new Error(`invalid Call: ${format(path)}: function call property '${prop}' must match '${regexIdentifier}'`);
             }
             const argsVal = value.obj[prop];
             if (argsVal.type !== Value_Type.OBJ) {
@@ -309,15 +306,15 @@ function parseImpl(path: Expr_Path, value: Value): Expr {
             }
             const args: Record<string, Expr> = {};
             for (const [key, val] of Object.entries(argsVal.obj)) {
-                if (!identRegexp.test(key)) {
-                    throw new Error(`invalid Call: ${format(append(path, prop, key))}: argument property '${key}' must match '${identRegexp}'`);
+                if (!regexIdentifier.test(key)) {
+                    throw new Error(`invalid Call: ${format(append(path, prop, key))}: argument property '${key}' must match '${regexIdentifier}'`);
                 }
                 args[key] = parseImpl(append(path, prop, key), val);
             }
             return create(ExprSchema, {
                 kind: Expr_Kind.CALL,
                 path: path,
-                call: create(CallSchema, {ident: prop, args: {}}),
+                call: create(CallSchema, {ident: prop, args: args}),
             });
         }
         default:

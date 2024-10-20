@@ -650,6 +650,9 @@
         if (v == null) {
             return protobuf.create(ValueSchema, { type: exports.Value_Type.NULL });
         }
+        if (Array.isArray(v)) {
+            return protobuf.create(ValueSchema, { type: exports.Value_Type.ARR, arr: v.map(convertFromJS$1) });
+        }
         switch (typeof v) {
             case "boolean":
                 return protobuf.create(ValueSchema, { type: exports.Value_Type.BOOL, bool: v });
@@ -662,9 +665,6 @@
                     type: exports.Value_Type.OBJ,
                     obj: Object.fromEntries(Object.entries(v).map(([k, v]) => [k, convertFromJS$1(v)]))
                 });
-        }
-        if (Array.isArray(v)) {
-            return protobuf.create(ValueSchema, { type: exports.Value_Type.ARR, arr: v.map(convertFromJS$1) });
         }
         throw new Error("unexpected value type");
     }
@@ -711,10 +711,1088 @@
         }
     }
 
+    function append(path, ...pos) {
+        const posList = [...pos].map((p) => typeof p === "string"
+            ? protobuf.create(Expr_Path_PosSchema, { key: p })
+            : protobuf.create(Expr_Path_PosSchema, { index: BigInt(p) }));
+        return protobuf.create(Expr_PathSchema, { pos: [...path.pos, ...posList] });
+    }
+    function format(path) {
+        if (path.pos.length === 0) {
+            return "/";
+        }
+        return [...path.pos]
+            .map((p) => p.key === "" ? `/${p.key}` : `/${p.index}`)
+            .join("");
+    }
+
+    const regexNonIdentChars = /[^$_a-zA-Z0-9]/g;
+    const regexFunctionDefinition = /^\$[_a-zA-Z][_a-zA-Z0-9]*(\(\s*\)|\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*(\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*)*(\s*,)?\s*\))?$/;
+    const regexForVariables = /^for\(\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*,\s*\$[_a-zA-Z][_a-zA-Z0-9]*\s*\)$/;
+    const regexIdentifier = /^\$[_a-zA-Z][_a-zA-Z0-9]*$/;
+    class Parser {
+        parse(input) {
+            try {
+                return protobuf.create(ParseOutputSchema, { expr: parseImpl(protobuf.create(Expr_PathSchema), input.value) });
+            }
+            catch (e) {
+                return protobuf.create(ParseOutputSchema, {
+                    isError: true,
+                    errorMessage: e instanceof Error ? e.message : JSON.stringify(e),
+                });
+            }
+        }
+    }
+    function parseImpl(path, value) {
+        switch (value.type) {
+            case exports.Value_Type.STR:
+                if (regexIdentifier.test(value.str)) {
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.REF,
+                        path: path,
+                        ref: protobuf.create(RefSchema, { ident: value.str }),
+                    });
+                }
+                if (/^`.*`$/.test(value.str)) {
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.SCALAR,
+                        path: path,
+                        scalar: protobuf.create(ScalarSchema, {
+                            scalar: protobuf.create(ValueSchema, { type: exports.Value_Type.STR, str: value.str.slice(1, -1) })
+                        }),
+                    });
+                }
+                throw new Error(`invalid Scalar: ${path}: string literal must be enclosed by \`'\``);
+            case exports.Value_Type.BOOL:
+            case exports.Value_Type.NUM:
+                return protobuf.create(ExprSchema, {
+                    kind: exports.Expr_Kind.SCALAR,
+                    path: path,
+                    scalar: protobuf.create(ScalarSchema, { scalar: value }),
+                });
+            case exports.Value_Type.OBJ:
+                if ("eval" in value.obj) {
+                    const eval_ = protobuf.create(EvalSchema, {
+                        eval: parseImpl(append(path, "eval"), value.obj["eval"]),
+                    });
+                    if ("where" in value.obj) {
+                        const where = value.obj["where"];
+                        if (where.type !== exports.Value_Type.ARR) {
+                            throw new Error(`invalid Expr: ${format(append(path, "where"))}: where clause must be an array`);
+                        }
+                        const defs = [];
+                        for (let i = 0; i < where.arr.length; i++) {
+                            const def = where.arr[i];
+                            if (def.type !== exports.Value_Type.OBJ) {
+                                throw new Error(`invalid definition: ${format(append(path, "where", i))}: where clause must contain only objects but got ${def.type}`);
+                            }
+                            const keys = Object.keys(def.obj);
+                            if (keys.length !== 1) {
+                                throw new Error(`invalid definition: ${format(append(path, "where", i))}: definition must contain one property`);
+                            }
+                            const prop = keys[0];
+                            if (!regexFunctionDefinition.test(prop)) {
+                                throw new Error(`invalid definition: ${format(append(path, "where", i, prop))}: definition must match ${regexFunctionDefinition}`);
+                            }
+                            const idents = prop.replaceAll(regexNonIdentChars, "")
+                                .split("$")
+                                .map((s) => "$" + s);
+                            defs.push(protobuf.create(Eval_DefinitionSchema, {
+                                ident: idents[1],
+                                args: idents.slice(2),
+                                body: parseImpl(append(path, "where", i, prop), def.obj[prop]),
+                            }));
+                        }
+                        eval_.where = defs;
+                    }
+                    return protobuf.create(ExprSchema, { kind: exports.Expr_Kind.EVAL, path: path, eval: eval_ });
+                }
+                if ("obj" in value.obj) {
+                    const objVal = value.obj["obj"];
+                    if (objVal.type !== exports.Value_Type.OBJ) {
+                        throw new Error(`invalid Obj: ${format(append(path, "obj"))}: 'obj' property must be an object`);
+                    }
+                    const obj = Object.fromEntries(Object.entries(objVal.obj)
+                        .map(([key, val]) => [key, parseImpl(append(path, "obj", key), val)]));
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.OBJ,
+                        path: path,
+                        obj: protobuf.create(ObjSchema, { obj: obj }),
+                    });
+                }
+                if ("arr" in value.obj) {
+                    const arrVal = value.obj["arr"];
+                    if (arrVal.type !== exports.Value_Type.ARR) {
+                        throw new Error(`invalid Arr: ${format(append(path, "arr"))}: 'arr' property must be an array`);
+                    }
+                    const arr = arrVal.arr
+                        .map((val, i) => parseImpl(append(path, "arr", i), val));
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.ARR,
+                        path: path,
+                        arr: protobuf.create(ArrSchema, { arr: arr }),
+                    });
+                }
+                if ("json" in value.obj) {
+                    if (includesNull(value.obj["json"])) {
+                        throw new Error(`invalid Json: ${format(append(path, "json"))}: 'json' property cannot contain null`);
+                    }
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.JSON,
+                        path: path,
+                        json: protobuf.create(JsonSchema, { json: value.obj["json"] }),
+                    });
+                }
+                if ("do" in value.obj) {
+                    const iter = protobuf.create(IterSchema, {});
+                    for (const prop of Object.keys(value.obj)) {
+                        if (prop === "do") {
+                            iter.do = parseImpl(append(path, "do"), value.obj["do"]);
+                            continue;
+                        }
+                        if (prop === "if") {
+                            iter.if = parseImpl(append(path, "if"), value.obj["if"]);
+                            continue;
+                        }
+                        if (regexForVariables.test(prop)) {
+                            const idents = prop.replaceAll(regexNonIdentChars, "")
+                                .split("$")
+                                .map((s) => "$" + s);
+                            iter.posIdent = idents[1];
+                            iter.elemIdent = idents[2];
+                            iter.col = parseImpl(append(path, prop), value.obj[prop]);
+                            continue;
+                        }
+                        throw new Error(`invalid Iter: ${format(append(path, "do", prop))}: invalid property ${prop}`);
+                    }
+                    if (!iter.col) {
+                        throw new Error(`invalid Iter: ${format(path)}: 'for(...vars...)' property is required`);
+                    }
+                    return protobuf.create(ExprSchema, { kind: exports.Expr_Kind.ITER, path: path, iter: iter });
+                }
+                if ("get" in value.obj) {
+                    if (!("from" in value.obj)) {
+                        throw new Error(`invalid Elem: ${format(path)}: 'from' property is required`);
+                    }
+                    const elem = protobuf.create(ElemSchema, {
+                        get: parseImpl(append(path, "get"), value.obj["get"]),
+                        from: parseImpl(append(path, "from"), value.obj["from"]),
+                    });
+                    return protobuf.create(ExprSchema, { kind: exports.Expr_Kind.ELEM, path: path, elem: elem });
+                }
+                if ("cases" in value.obj) {
+                    const casesVal = value.obj["cases"];
+                    if (casesVal.type !== exports.Value_Type.ARR) {
+                        throw new Error(`invalid Cases: ${format(append(path, "cases"))}: 'cases' property must be an array`);
+                    }
+                    const cases = [];
+                    for (let i = 0; i < casesVal.arr.length; i++) {
+                        const c = casesVal.arr[i];
+                        if (c.type !== exports.Value_Type.OBJ) {
+                            throw new Error(`invalid Case: ${format(append(path, "cases", i))}: 'cases' property must contain only objects but got ${c.type}`);
+                        }
+                        if ("otherwise" in c.obj) {
+                            const otherwise = parseImpl(append(path, "cases", i, "otherwise"), c.obj["otherwise"]);
+                            cases.push(protobuf.create(Cases_CaseSchema, { isOtherwise: true, otherwise: otherwise, }));
+                        }
+                        else {
+                            if (!("when" in c.obj)) {
+                                throw new Error(`invalid Case: ${format(append(path, "cases", i))}: 'when' property is required`);
+                            }
+                            const when = parseImpl(append(path, "cases", i, "when"), c.obj["when"]);
+                            if (!("then" in c.obj)) {
+                                throw new Error(`invalid Case: ${format(append(path, "cases", i))}: 'then' property is required`);
+                            }
+                            const then = parseImpl(append(path, "cases", i, "then"), c.obj["then"]);
+                            cases.push(protobuf.create(Cases_CaseSchema, { when: when, then: then }));
+                        }
+                    }
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.CASES,
+                        path: path,
+                        cases: protobuf.create(CasesSchema, { cases: cases }),
+                    });
+                }
+                if (Object.keys(value.obj).length !== 1) {
+                    throw new Error(`invalid Expr: ${format(path)}: operation or function call must contain only one property`);
+                }
+                const prop = Object.keys(value.obj)[0];
+                {
+                    const opUnary = {
+                        "len": exports.OpUnary_Op.LEN,
+                        "not": exports.OpUnary_Op.NOT,
+                        "flat": exports.OpUnary_Op.FLAT,
+                        "floor": exports.OpUnary_Op.FLOOR,
+                        "ceil": exports.OpUnary_Op.CEIL,
+                        "abort": exports.OpUnary_Op.ABORT,
+                    }[prop];
+                    if (opUnary) {
+                        return protobuf.create(ExprSchema, {
+                            kind: exports.Expr_Kind.OP_UNARY,
+                            path: path,
+                            opUnary: protobuf.create(OpUnarySchema, {
+                                op: opUnary,
+                                operand: parseImpl(append(path, prop), value.obj[prop])
+                            }),
+                        });
+                    }
+                }
+                {
+                    const opBinary = {
+                        "sub": exports.OpBinary_Op.SUB,
+                        "div": exports.OpBinary_Op.DIV,
+                        "eq": exports.OpBinary_Op.EQ,
+                        "neq": exports.OpBinary_Op.NEQ,
+                        "lt": exports.OpBinary_Op.LT,
+                        "lte": exports.OpBinary_Op.LTE,
+                        "gt": exports.OpBinary_Op.GT,
+                        "gte": exports.OpBinary_Op.GTE,
+                    }[prop];
+                    if (opBinary) {
+                        if (value.obj[prop].type !== exports.Value_Type.ARR) {
+                            throw new Error(`invalid OpBinary: ${format(append(path, prop))}: '${prop}' property must be an array`);
+                        }
+                        if (value.obj[prop].arr.length !== 2) {
+                            throw new Error(`invalid OpBinary: ${format(append(path, prop))}: '${prop}' property must contain two elements`);
+                        }
+                        return protobuf.create(ExprSchema, {
+                            kind: exports.Expr_Kind.OP_BINARY,
+                            path: path,
+                            opBinary: protobuf.create(OpBinarySchema, {
+                                op: opBinary,
+                                left: parseImpl(append(path, prop, 0), value.obj[prop].arr[0]),
+                                right: parseImpl(append(path, prop, 1), value.obj[prop].arr[1]),
+                            }),
+                        });
+                    }
+                }
+                {
+                    const opVariadic = {
+                        "add": exports.OpVariadic_Op.ADD,
+                        "mul": exports.OpVariadic_Op.MUL,
+                        "and": exports.OpVariadic_Op.AND,
+                        "or": exports.OpVariadic_Op.OR,
+                        "cat": exports.OpVariadic_Op.CAT,
+                        "min": exports.OpVariadic_Op.MIN,
+                        "max": exports.OpVariadic_Op.MAX,
+                        "merge": exports.OpVariadic_Op.MERGE,
+                    }[prop];
+                    if (opVariadic) {
+                        if (value.obj[prop].type !== exports.Value_Type.ARR) {
+                            throw new Error(`invalid OpVariadic: ${format(append(path, prop))}: '${prop}' property must be an array`);
+                        }
+                        if ((prop === "min" || prop === "max") && value.obj[prop].arr.length === 0) {
+                            throw new Error(`invalid OpVariadic: ${format(append(path, prop))}: '${prop}' property must contain at least one element`);
+                        }
+                        const arr = value.obj[prop].arr
+                            .map((val, i) => parseImpl(append(path, prop, i), val));
+                        return protobuf.create(ExprSchema, {
+                            kind: exports.Expr_Kind.OP_VARIADIC,
+                            path: path,
+                            opVariadic: protobuf.create(OpVariadicSchema, { op: opVariadic, operands: arr }),
+                        });
+                    }
+                }
+                {
+                    if (!regexIdentifier.test(prop)) {
+                        throw new Error(`invalid Call: ${format(path)}: function call property '${prop}' must match '${regexIdentifier}'`);
+                    }
+                    const argsVal = value.obj[prop];
+                    if (argsVal.type !== exports.Value_Type.OBJ) {
+                        throw new Error(`invalid Call: ${format(append(path, prop))}: arguments must be given as an object`);
+                    }
+                    const args = {};
+                    for (const [key, val] of Object.entries(argsVal.obj)) {
+                        if (!regexIdentifier.test(key)) {
+                            throw new Error(`invalid Call: ${format(append(path, prop, key))}: argument property '${key}' must match '${regexIdentifier}'`);
+                        }
+                        args[key] = parseImpl(append(path, prop, key), val);
+                    }
+                    return protobuf.create(ExprSchema, {
+                        kind: exports.Expr_Kind.CALL,
+                        path: path,
+                        call: protobuf.create(CallSchema, { ident: prop, args: args }),
+                    });
+                }
+            default:
+                throw new Error("unexpected value type");
+        }
+    }
+    function includesNull(value) {
+        if (value.type === exports.Value_Type.NULL) {
+            return true;
+        }
+        for (const v of Object.values(value.obj)) {
+            if (includesNull(v)) {
+                return true;
+            }
+        }
+        for (const v of value.arr) {
+            if (includesNull(v)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function register(defStack, def) {
+        return protobuf.create(DefStackSchema, {
+            parent: defStack,
+            def: def,
+        });
+    }
+    function find(defStack, ident) {
+        if (defStack == null || defStack.def == null) {
+            return null;
+        }
+        if (defStack.def?.ident === ident) {
+            return defStack;
+        }
+        if (defStack.parent == null) {
+            return null;
+        }
+        return find(defStack.parent, ident);
+    }
+    function newDefinition(path, ident, value) {
+        return protobuf.create(Eval_DefinitionSchema, {
+            ident: ident,
+            body: protobuf.create(ExprSchema, {
+                path: path,
+                kind: exports.Expr_Kind.JSON,
+                value: value,
+                json: protobuf.create(JsonSchema, { json: value }),
+            }),
+        });
+    }
+
+    function objValue(obj) {
+        return protobuf.create(ValueSchema, { type: exports.Value_Type.OBJ, obj: obj });
+    }
+    function arrValue(arr) {
+        return protobuf.create(ValueSchema, { type: exports.Value_Type.ARR, arr: arr });
+    }
+    function strValue(str) {
+        return protobuf.create(ValueSchema, { type: exports.Value_Type.STR, str: str });
+    }
+    function numValue(num) {
+        return protobuf.create(ValueSchema, { type: exports.Value_Type.NUM, num: num });
+    }
+    function boolValue(b) {
+        return protobuf.create(ValueSchema, { type: exports.Value_Type.BOOL, bool: b });
+    }
+
+    class Config {
+        constructor(props) {
+            this.extension = props?.extension ?? new Map();
+            this.beforeEvaluate = props?.beforeEvaluate ?? (() => undefined);
+            this.afterEvaluate = props?.afterEvaluate ?? (() => undefined);
+        }
+        extension;
+        beforeEvaluate;
+        afterEvaluate;
+    }
+    class Evaluator {
+        constructor(config = new Config()) {
+            this.config = config;
+        }
+        config;
+        evaluateExpr(input) {
+            try {
+                this.config.beforeEvaluate(input);
+            }
+            catch (err) {
+                return protobuf.create(EvaluateOutputSchema, {
+                    status: exports.EvaluateOutput_Status.UNKNOWN_ERROR,
+                    errorPath: input.expr.path,
+                    errorMessage: `beforeEvaluate failed: ${err instanceof Error ? err.message : JSON.stringify(err)}`,
+                });
+            }
+            let output;
+            switch (input.expr.kind) {
+                default:
+                    throw new Error("given expression must be validated");
+                case exports.Expr_Kind.EVAL:
+                    output = this.evaluateEval(input);
+                    break;
+                case exports.Expr_Kind.SCALAR:
+                    output = this.evaluateScalar(input);
+                    break;
+                case exports.Expr_Kind.REF:
+                    output = this.evaluateRef(input);
+                    break;
+                case exports.Expr_Kind.OBJ:
+                    output = this.evaluateObj(input);
+                    break;
+                case exports.Expr_Kind.ARR:
+                    output = this.evaluateArr(input);
+                    break;
+                case exports.Expr_Kind.JSON:
+                    output = this.evaluateJson(input);
+                    break;
+                case exports.Expr_Kind.ITER:
+                    output = this.evaluateIter(input);
+                    break;
+                case exports.Expr_Kind.ELEM:
+                    output = this.evaluateElem(input);
+                    break;
+                case exports.Expr_Kind.CALL:
+                    output = this.evaluateCall(input);
+                    break;
+                case exports.Expr_Kind.CASES:
+                    output = this.evaluateCases(input);
+                    break;
+                case exports.Expr_Kind.OP_UNARY:
+                    output = this.evaluateOpUnary(input);
+                    break;
+                case exports.Expr_Kind.OP_BINARY:
+                    output = this.evaluateOpBinary(input);
+                    break;
+                case exports.Expr_Kind.OP_VARIADIC:
+                    output = this.evaluateOpVariadic(input);
+                    break;
+            }
+            try {
+                this.config.afterEvaluate(input, output);
+            }
+            catch (err) {
+                return protobuf.create(EvaluateOutputSchema, {
+                    status: exports.EvaluateOutput_Status.UNKNOWN_ERROR,
+                    errorPath: input.expr.path,
+                    errorMessage: `afterEvaluate failed: ${err instanceof Error ? err.message : JSON.stringify(err)}`,
+                });
+            }
+            return output;
+        }
+        evaluateEval(input) {
+            let st = input.defStack;
+            const where = input.expr.eval?.where ?? [];
+            for (const def of where) {
+                st = register(st, def);
+            }
+            return this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: input.expr.eval.eval }));
+        }
+        evaluateScalar(input) {
+            return protobuf.create(EvaluateOutputSchema, { value: input.expr.scalar.scalar });
+        }
+        evaluateRef(input) {
+            const ref = input.expr.ref;
+            let st = find(input.defStack, ref.ident);
+            if (!st) {
+                const ext = this.config.extension.get(ref.ident);
+                if (!ext) {
+                    return errorReferenceNotFound(input.expr.path, ref.ident);
+                }
+                return ext(input.expr.path, {});
+            }
+            return this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: st.def.body }));
+        }
+        evaluateObj(input) {
+            const result = {};
+            for (const [pos, expr] of Object.entries(input.expr.obj.obj)) {
+                const val = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: expr }));
+                if (val.status !== exports.EvaluateOutput_Status.OK) {
+                    return val;
+                }
+                result[pos] = val.value;
+            }
+            return protobuf.create(EvaluateOutputSchema, { value: objValue(result) });
+        }
+        evaluateArr(input) {
+            const result = [];
+            for (const expr of input.expr.arr.arr) {
+                const val = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: expr }));
+                if (val.status !== exports.EvaluateOutput_Status.OK) {
+                    return val;
+                }
+                result.push(val.value);
+            }
+            return protobuf.create(EvaluateOutputSchema, { value: arrValue(result) });
+        }
+        evaluateJson(input) {
+            return protobuf.create(EvaluateOutputSchema, { value: input.expr.json.json });
+        }
+        evaluateIter(input) {
+            const iter = input.expr.iter;
+            const forPos = iter.posIdent;
+            const forElem = iter.elemIdent;
+            const inVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: iter.col }));
+            switch (inVal.value.type) {
+                case exports.Value_Type.STR:
+                    const strResult = [];
+                    for (let i = 0; i < inVal.value.str.length; i++) {
+                        let st = input.defStack;
+                        st = register(st, newDefinition(input.expr.path, forPos, numValue(i)));
+                        st = register(st, newDefinition(input.expr.path, forElem, strValue(inVal.value.str[i])));
+                        if (iter.if) {
+                            const ifVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: iter.if }));
+                            if (ifVal.status !== exports.EvaluateOutput_Status.OK) {
+                                return ifVal;
+                            }
+                            if (ifVal.value.type !== exports.Value_Type.BOOL) {
+                                return errorUnexpectedType(iter.if.path, ifVal.value.type, [exports.Value_Type.BOOL]);
+                            }
+                            if (!ifVal.value.bool) {
+                                continue;
+                            }
+                        }
+                        const v = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: iter.do }));
+                        if (v.status !== exports.EvaluateOutput_Status.OK) {
+                            return v;
+                        }
+                        strResult.push(v.value);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: arrValue(strResult) });
+                case exports.Value_Type.ARR:
+                    const arrResult = [];
+                    for (let i = 0; i < inVal.value.arr.length; i++) {
+                        let st = input.defStack;
+                        st = register(st, newDefinition(input.expr.path, forPos, numValue(i)));
+                        st = register(st, newDefinition(input.expr.path, forElem, inVal.value.arr[i]));
+                        if (iter.if) {
+                            const ifVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: iter.if }));
+                            if (ifVal.status !== exports.EvaluateOutput_Status.OK) {
+                                return ifVal;
+                            }
+                            if (ifVal.value.type !== exports.Value_Type.BOOL) {
+                                return errorUnexpectedType(iter.if.path, ifVal.value.type, [exports.Value_Type.BOOL]);
+                            }
+                            if (!ifVal.value.bool) {
+                                continue;
+                            }
+                        }
+                        const v = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: iter.do }));
+                        if (v.status !== exports.EvaluateOutput_Status.OK) {
+                            return v;
+                        }
+                        arrResult.push(v.value);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: arrValue(arrResult) });
+                case exports.Value_Type.OBJ:
+                    const objResult = {};
+                    for (const key of sortedKeys(inVal.value.obj)) {
+                        let st = input.defStack;
+                        st = register(st, newDefinition(input.expr.path, forPos, strValue(key)));
+                        st = register(st, newDefinition(input.expr.path, forElem, inVal.value.obj[key]));
+                        if (iter.if) {
+                            const ifVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: iter.if }));
+                            if (ifVal.status !== exports.EvaluateOutput_Status.OK) {
+                                return ifVal;
+                            }
+                            if (ifVal.value.type !== exports.Value_Type.BOOL) {
+                                return errorUnexpectedType(iter.if.path, ifVal.value.type, [exports.Value_Type.BOOL]);
+                            }
+                            if (!ifVal.value.bool) {
+                                continue;
+                            }
+                        }
+                        const v = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: iter.do }));
+                        if (v.status !== exports.EvaluateOutput_Status.OK) {
+                            return v;
+                        }
+                        objResult[key] = v.value;
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: objValue(objResult) });
+                default:
+                    return errorUnexpectedType(iter.col.path, inVal.value.type, [exports.Value_Type.STR, exports.Value_Type.ARR, exports.Value_Type.OBJ]);
+            }
+        }
+        evaluateElem(input) {
+            const elem = input.expr.elem;
+            const getVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: elem.get }));
+            if (getVal.status !== exports.EvaluateOutput_Status.OK) {
+                return getVal;
+            }
+            const pos = getVal.value;
+            const fromVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: elem.from }));
+            if (fromVal.status !== exports.EvaluateOutput_Status.OK) {
+                return fromVal;
+            }
+            const col = fromVal.value;
+            switch (col.type) {
+                case exports.Value_Type.STR:
+                    if (pos.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(elem.get.path, pos.type, [exports.Value_Type.NUM]);
+                    }
+                    if (!canInt(pos)) {
+                        return errorIndexNotInteger(elem.get.path, pos.num);
+                    }
+                    const idxStr = Math.floor(pos.num);
+                    if (idxStr < 0 || idxStr >= col.str.length) {
+                        return errorIndexOutOfBounds(elem.get.path, pos, 0, col.str.length);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: strValue(col.str[idxStr]) });
+                case exports.Value_Type.ARR:
+                    if (pos.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(elem.get.path, pos.type, [exports.Value_Type.NUM]);
+                    }
+                    if (!canInt(pos)) {
+                        return errorIndexNotInteger(elem.get.path, pos.num);
+                    }
+                    const idxArr = Math.floor(pos.num);
+                    if (idxArr < 0 || idxArr >= col.arr.length) {
+                        return errorIndexOutOfBounds(elem.get.path, pos, 0, col.arr.length);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: col.arr[idxArr] });
+                case exports.Value_Type.OBJ:
+                    if (pos.type !== exports.Value_Type.STR) {
+                        return errorUnexpectedType(elem.get.path, pos.type, [exports.Value_Type.STR]);
+                    }
+                    const key = pos.str;
+                    if (!(key in col.obj)) {
+                        return errorInvalidKey(elem.get.path, key, Object.keys(col.obj));
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: col.obj[key] });
+                default:
+                    return errorUnexpectedType(elem.from.path, col.type, [exports.Value_Type.STR, exports.Value_Type.ARR, exports.Value_Type.OBJ]);
+            }
+        }
+        evaluateCall(input) {
+            const call = input.expr.call;
+            let st = find(input.defStack, call.ident);
+            if (!st) {
+                const ext = this.config.extension.get(call.ident);
+                if (!ext) {
+                    return errorReferenceNotFound(input.expr.path, call.ident);
+                }
+                const args = {};
+                for (const [argName, argExpr] of Object.entries(call.args)) {
+                    const argVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, {
+                        defStack: input.defStack,
+                        expr: argExpr
+                    }));
+                    if (argVal.status !== exports.EvaluateOutput_Status.OK) {
+                        return argVal;
+                    }
+                    args[argName] = argVal.value;
+                }
+                return ext(input.expr.path, args);
+            }
+            const def = st.def;
+            for (const argName of def.args) {
+                const arg = call.args[argName];
+                if (!arg) {
+                    return errorArgumentMismatch(input.expr.path, argName);
+                }
+                const argVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: arg }));
+                if (argVal.status !== exports.EvaluateOutput_Status.OK) {
+                    return argVal;
+                }
+                st = register(st, newDefinition(append(input.expr.path, call.ident, argName), argName, argVal.value));
+            }
+            return this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: st, expr: def.body }));
+        }
+        evaluateCases(input) {
+            const cases = input.expr.cases.cases;
+            for (const case_ of cases) {
+                if (case_.isOtherwise) {
+                    return this.evaluateExpr(protobuf.create(EvaluateInputSchema, {
+                        defStack: input.defStack,
+                        expr: case_.otherwise
+                    }));
+                }
+                else {
+                    const boolVal = this.evaluateExpr(protobuf.create(EvaluateInputSchema, {
+                        defStack: input.defStack,
+                        expr: case_.when
+                    }));
+                    if (boolVal.status !== exports.EvaluateOutput_Status.OK) {
+                        return boolVal;
+                    }
+                    if (boolVal.value.type !== exports.Value_Type.BOOL) {
+                        return errorUnexpectedType(case_.when.path, boolVal.value.type, [exports.Value_Type.BOOL]);
+                    }
+                    if (boolVal.value.bool) {
+                        return this.evaluateExpr(protobuf.create(EvaluateInputSchema, {
+                            defStack: input.defStack,
+                            expr: case_.then
+                        }));
+                    }
+                }
+            }
+            return errorCasesNotExhaustive(append(input.expr.path, "cases"));
+        }
+        evaluateOpUnary(input) {
+            const op = input.expr.opUnary;
+            const o = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: op.operand }));
+            if (o.status !== exports.EvaluateOutput_Status.OK) {
+                return o;
+            }
+            const operand = o.value;
+            switch (op.op) {
+                case exports.OpUnary_Op.LEN:
+                    switch (operand.type) {
+                        case exports.Value_Type.STR:
+                            return protobuf.create(EvaluateOutputSchema, { value: numValue(operand.str.length) });
+                        case exports.Value_Type.ARR:
+                            return protobuf.create(EvaluateOutputSchema, { value: numValue(operand.arr.length) });
+                        case exports.Value_Type.OBJ:
+                            return protobuf.create(EvaluateOutputSchema, { value: numValue(Object.keys(operand.obj).length) });
+                        default:
+                            return errorUnexpectedType(append(input.expr.path, "len"), operand.type, [exports.Value_Type.STR, exports.Value_Type.ARR, exports.Value_Type.OBJ]);
+                    }
+                case exports.OpUnary_Op.NOT:
+                    if (operand.type !== exports.Value_Type.BOOL) {
+                        return errorUnexpectedType(append(input.expr.path, "not"), operand.type, [exports.Value_Type.BOOL]);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(!operand.bool) });
+                case exports.OpUnary_Op.FLAT:
+                    if (operand.type !== exports.Value_Type.ARR) {
+                        return errorUnexpectedType(append(input.expr.path, "flat"), operand.type, [exports.Value_Type.ARR]);
+                    }
+                    const flatArr = [];
+                    for (const elem of operand.arr) {
+                        if (elem.type !== exports.Value_Type.ARR) {
+                            return errorUnexpectedType(append(input.expr.path, "flat"), elem.type, [exports.Value_Type.ARR]);
+                        }
+                        flatArr.push(...elem.arr);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: arrValue(flatArr) });
+                case exports.OpUnary_Op.FLOOR:
+                    if (operand.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(append(input.expr.path, "floor"), operand.type, [exports.Value_Type.NUM]);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(Math.floor(operand.num)) });
+                case exports.OpUnary_Op.CEIL:
+                    if (operand.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(append(input.expr.path, "ceil"), operand.type, [exports.Value_Type.NUM]);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(Math.ceil(operand.num)) });
+                case exports.OpUnary_Op.ABORT:
+                    if (operand.type !== exports.Value_Type.STR) {
+                        return errorUnexpectedType(append(input.expr.path, "abort"), operand.type, [exports.Value_Type.STR]);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { status: exports.EvaluateOutput_Status.ABORTED, errorMessage: operand.str });
+                default:
+                    throw new Error(`unexpected unary operator ${exports.OpUnary_Op[op.op]}`);
+            }
+        }
+        evaluateOpBinary(input) {
+            const op = input.expr.opBinary;
+            const ol = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: op.left }));
+            if (ol.status !== exports.EvaluateOutput_Status.OK) {
+                return ol;
+            }
+            const or = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: op.right }));
+            if (or.status !== exports.EvaluateOutput_Status.OK) {
+                return or;
+            }
+            const operandL = ol.value;
+            const operandR = or.value;
+            switch (op.op) {
+                case exports.OpBinary_Op.SUB:
+                    if (operandL.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(append(input.expr.path, "sub", 0), operandL.type, [exports.Value_Type.NUM]);
+                    }
+                    if (operandR.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(append(input.expr.path, "sub", 1), operandR.type, [exports.Value_Type.NUM]);
+                    }
+                    const subResult = operandL.num - operandR.num;
+                    if (!isFinite(subResult)) {
+                        return errorNotFiniteNumber(input.expr.path);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(subResult) });
+                case exports.OpBinary_Op.DIV:
+                    if (operandL.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(append(input.expr.path, "div", 0), operandL.type, [exports.Value_Type.NUM]);
+                    }
+                    if (operandR.type !== exports.Value_Type.NUM) {
+                        return errorUnexpectedType(append(input.expr.path, "div", 1), operandR.type, [exports.Value_Type.NUM]);
+                    }
+                    const divResult = operandL.num / operandR.num;
+                    if (!isFinite(divResult)) {
+                        return errorNotFiniteNumber(input.expr.path);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(divResult) });
+                case exports.OpBinary_Op.EQ:
+                    return protobuf.create(EvaluateOutputSchema, { value: equal(operandL, operandR) });
+                case exports.OpBinary_Op.NEQ:
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(!equal(operandL, operandR).bool) });
+                case exports.OpBinary_Op.LT:
+                    const ltCmpVal = compare(append(input.expr.path, "lt"), operandL, operandR);
+                    if (ltCmpVal.status !== exports.EvaluateOutput_Status.OK) {
+                        return ltCmpVal;
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(ltCmpVal.value.num < 0) });
+                case exports.OpBinary_Op.LTE:
+                    const lteCmpVal = compare(append(input.expr.path, "lte"), operandL, operandR);
+                    if (lteCmpVal.status !== exports.EvaluateOutput_Status.OK) {
+                        return lteCmpVal;
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(lteCmpVal.value.num <= 0) });
+                case exports.OpBinary_Op.GT:
+                    const gtCmpVal = compare(append(input.expr.path, "gt"), operandL, operandR);
+                    if (gtCmpVal.status !== exports.EvaluateOutput_Status.OK) {
+                        return gtCmpVal;
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(gtCmpVal.value.num > 0) });
+                case exports.OpBinary_Op.GTE:
+                    const gteCmpVal = compare(append(input.expr.path, "gte"), operandL, operandR);
+                    if (gteCmpVal.status !== exports.EvaluateOutput_Status.OK) {
+                        return gteCmpVal;
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(gteCmpVal.value.num >= 0) });
+                default:
+                    throw new Error(`unexpected binary operator ${exports.OpBinary_Op[op.op]}`);
+            }
+        }
+        evaluateOpVariadic(input) {
+            const op = input.expr.opVariadic;
+            const operands = [];
+            for (const elem of op.operands) {
+                const val = this.evaluateExpr(protobuf.create(EvaluateInputSchema, { defStack: input.defStack, expr: elem }));
+                if (val.status !== exports.EvaluateOutput_Status.OK) {
+                    return val;
+                }
+                operands.push(val.value);
+            }
+            switch (op.op) {
+                case exports.OpVariadic_Op.ADD:
+                    let addVal = 0.0;
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.NUM) {
+                            return errorUnexpectedType(append(input.expr.path, "add", i), operand.type, [exports.Value_Type.NUM]);
+                        }
+                        addVal += operand.num;
+                    }
+                    if (!isFinite(addVal)) {
+                        return errorNotFiniteNumber(append(input.expr.path, "add"));
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(addVal) });
+                case exports.OpVariadic_Op.MUL:
+                    let mulVal = 1.0;
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.NUM) {
+                            return errorUnexpectedType(append(input.expr.path, "mul", i), operand.type, [exports.Value_Type.NUM]);
+                        }
+                        mulVal *= operand.num;
+                    }
+                    if (!isFinite(mulVal)) {
+                        return errorNotFiniteNumber(append(input.expr.path, "mul"));
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(mulVal) });
+                case exports.OpVariadic_Op.AND:
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.BOOL) {
+                            return errorUnexpectedType(append(input.expr.path, "and", i), operand.type, [exports.Value_Type.BOOL]);
+                        }
+                        if (!operand.bool) {
+                            return protobuf.create(EvaluateOutputSchema, { value: boolValue(false) });
+                        }
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(true) });
+                case exports.OpVariadic_Op.OR:
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.BOOL) {
+                            return errorUnexpectedType(append(input.expr.path, "or", i), operand.type, [exports.Value_Type.BOOL]);
+                        }
+                        if (operand.bool) {
+                            return protobuf.create(EvaluateOutputSchema, { value: boolValue(true) });
+                        }
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: boolValue(false) });
+                case exports.OpVariadic_Op.CAT:
+                    let catVal = "";
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.STR) {
+                            return errorUnexpectedType(append(input.expr.path, "cat", i), operand.type, [exports.Value_Type.STR]);
+                        }
+                        catVal += operand.str;
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: strValue(catVal) });
+                case exports.OpVariadic_Op.MIN:
+                    let minVal = Infinity;
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.NUM) {
+                            return errorUnexpectedType(append(input.expr.path, "min", i), operand.type, [exports.Value_Type.NUM]);
+                        }
+                        minVal = Math.min(minVal, operand.num);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(minVal) });
+                case exports.OpVariadic_Op.MAX:
+                    let maxVal = -Infinity;
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.NUM) {
+                            return errorUnexpectedType(append(input.expr.path, "max", i), operand.type, [exports.Value_Type.NUM]);
+                        }
+                        maxVal = Math.max(maxVal, operand.num);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: numValue(maxVal) });
+                case exports.OpVariadic_Op.MERGE:
+                    const mergeVal = {};
+                    for (let i = 0; i < operands.length; i++) {
+                        const operand = operands[i];
+                        if (operand.type !== exports.Value_Type.OBJ) {
+                            return errorUnexpectedType(append(input.expr.path, "merge", i), operand.type, [exports.Value_Type.OBJ]);
+                        }
+                        Object.assign(mergeVal, operand.obj);
+                    }
+                    return protobuf.create(EvaluateOutputSchema, { value: objValue(mergeVal) });
+                default:
+                    throw new Error(`unexpected variadic operator ${exports.OpVariadic_Op[op.op]}`);
+            }
+        }
+    }
+    function errorIndexOutOfBounds(path, index, begin, end) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.INVALID_INDEX,
+            errorPath: path,
+            errorMessage: `invalid index: index out of bounds: ${index.num} not in [${begin}, ${end})`,
+        });
+    }
+    function errorIndexNotInteger(path, index) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.INVALID_INDEX,
+            errorPath: path,
+            errorMessage: `invalid index: non integer index: ${index}`,
+        });
+    }
+    function errorInvalidKey(path, key, keys) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.INVALID_INDEX,
+            errorPath: path,
+            errorMessage: `invalid key: "${key}" not in {${keys.join(",")}}`,
+        });
+    }
+    function errorUnexpectedType(path, got, want) {
+        const wantStr = want.map(t => t.toString());
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.UNEXPECTED_TYPE,
+            errorPath: path,
+            errorMessage: `unexpected type: got ${got.toString()}, want {${wantStr.join(",")}}`,
+        });
+    }
+    function errorArgumentMismatch(path, arg) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.ARGUMENT_MISMATCH,
+            errorPath: path,
+            errorMessage: `argument mismatch: argument "${arg}" required`,
+        });
+    }
+    function errorReferenceNotFound(path, ref) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.REFERENCE_NOT_FOUND,
+            errorPath: path,
+            errorMessage: `reference not found: "${ref}"`,
+        });
+    }
+    function errorCasesNotExhaustive(path) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.CASES_NOT_EXHAUSTIVE,
+            errorPath: path,
+            errorMessage: "cases not exhaustive",
+        });
+    }
+    function errorNotComparable(path) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.NOT_COMPARABLE,
+            errorPath: path,
+            errorMessage: "not comparable",
+        });
+    }
+    function errorNotFiniteNumber(path) {
+        return protobuf.create(EvaluateOutputSchema, {
+            status: exports.EvaluateOutput_Status.NOT_FINITE_NUMBER,
+            errorPath: path,
+            errorMessage: "not finite number",
+        });
+    }
+    function canInt(v) {
+        return v.type === exports.Value_Type.NUM && v.num === Math.floor(v.num);
+    }
+    function sortedKeys(m) {
+        return Object.keys(m).sort();
+    }
+    function equal(l, r) {
+        const falseValue = boolValue(false);
+        const trueValue = boolValue(true);
+        if (l.type !== r.type) {
+            return falseValue;
+        }
+        switch (l.type) {
+            case exports.Value_Type.NUM:
+                return boolValue(l.num === r.num);
+            case exports.Value_Type.BOOL:
+                return boolValue(l.bool === r.bool);
+            case exports.Value_Type.STR:
+                return boolValue(l.str === r.str);
+            case exports.Value_Type.ARR:
+                if (l.arr.length !== r.arr.length) {
+                    return falseValue;
+                }
+                for (let i = 0; i < l.arr.length; i++) {
+                    if (!equal(l.arr[i], r.arr[i]).bool) {
+                        return falseValue;
+                    }
+                }
+                return trueValue;
+            case exports.Value_Type.OBJ:
+                const lKeys = sortedKeys(l.obj);
+                const rKeys = sortedKeys(r.obj);
+                if (lKeys.length !== rKeys.length || !lKeys.every((key, i) => key === rKeys[i])) {
+                    return falseValue;
+                }
+                for (const key of lKeys) {
+                    if (!equal(l.obj[key], r.obj[key]).bool) {
+                        return falseValue;
+                    }
+                }
+                return trueValue;
+            default:
+                throw new Error(`unexpected type ${l.type}`);
+        }
+    }
+    function compare(path, l, r) {
+        const ltValue = protobuf.create(EvaluateOutputSchema, { value: numValue(-1) });
+        const gtValue = protobuf.create(EvaluateOutputSchema, { value: numValue(1) });
+        const eqValue = protobuf.create(EvaluateOutputSchema, { value: numValue(0) });
+        switch (l.type) {
+            case exports.Value_Type.NUM:
+                if (r.type !== exports.Value_Type.NUM) {
+                    return errorNotComparable(path);
+                }
+                return l.num < r.num ? ltValue : l.num > r.num ? gtValue : eqValue;
+            case exports.Value_Type.BOOL:
+                if (r.type !== exports.Value_Type.BOOL) {
+                    return errorNotComparable(path);
+                }
+                return !l.bool && r.bool ? ltValue : l.bool && !r.bool ? gtValue : eqValue;
+            case exports.Value_Type.STR:
+                if (r.type !== exports.Value_Type.STR) {
+                    return errorNotComparable(path);
+                }
+                return l.str < r.str ? ltValue : l.str > r.str ? gtValue : eqValue;
+            case exports.Value_Type.ARR:
+                if (r.type !== exports.Value_Type.ARR) {
+                    return errorNotComparable(path);
+                }
+                const minLength = Math.min(l.arr.length, r.arr.length);
+                for (let i = 0; i < minLength; i++) {
+                    const cmp = compare(path, l.arr[i], r.arr[i]);
+                    if (cmp.status !== exports.EvaluateOutput_Status.OK) {
+                        return cmp;
+                    }
+                    if (cmp.value.num !== 0) {
+                        return cmp;
+                    }
+                }
+                return l.arr.length < r.arr.length ? ltValue : l.arr.length > r.arr.length ? gtValue : eqValue;
+            default:
+                return errorNotComparable(path);
+        }
+    }
+
     exports.ArrSchema = ArrSchema;
     exports.CallSchema = CallSchema;
     exports.CasesSchema = CasesSchema;
     exports.Cases_CaseSchema = Cases_CaseSchema;
+    exports.Config = Config;
     exports.DecodeInputSchema = DecodeInputSchema;
     exports.DecodeOutputSchema = DecodeOutputSchema;
     exports.Decoder = Decoder;
@@ -729,6 +1807,7 @@
     exports.EvaluateInputSchema = EvaluateInputSchema;
     exports.EvaluateOutputSchema = EvaluateOutputSchema;
     exports.EvaluateOutput_StatusSchema = EvaluateOutput_StatusSchema;
+    exports.Evaluator = Evaluator;
     exports.ExprSchema = ExprSchema;
     exports.Expr_KindSchema = Expr_KindSchema;
     exports.Expr_PathSchema = Expr_PathSchema;
@@ -744,9 +1823,20 @@
     exports.OpVariadic_OpSchema = OpVariadic_OpSchema;
     exports.ParseInputSchema = ParseInputSchema;
     exports.ParseOutputSchema = ParseOutputSchema;
+    exports.Parser = Parser;
     exports.RefSchema = RefSchema;
     exports.ScalarSchema = ScalarSchema;
     exports.ValueSchema = ValueSchema;
     exports.Value_TypeSchema = Value_TypeSchema;
+    exports.append = append;
+    exports.arrValue = arrValue;
+    exports.boolValue = boolValue;
+    exports.find = find;
+    exports.format = format;
+    exports.newDefinition = newDefinition;
+    exports.numValue = numValue;
+    exports.objValue = objValue;
+    exports.register = register;
+    exports.strValue = strValue;
 
 }));

@@ -29,6 +29,9 @@ function convertFromJS(v) {
     if (v == null) {
         return (0, protobuf_1.create)(value_pb_js_1.ValueSchema, { type: value_pb_js_1.Value_Type.NULL });
     }
+    if (Array.isArray(v)) {
+        return (0, protobuf_1.create)(value_pb_js_1.ValueSchema, { type: value_pb_js_1.Value_Type.ARR, arr: v.map(convertFromJS) });
+    }
     switch (typeof v) {
         case "boolean":
             return (0, protobuf_1.create)(value_pb_js_1.ValueSchema, { type: value_pb_js_1.Value_Type.BOOL, bool: v });
@@ -41,9 +44,6 @@ function convertFromJS(v) {
                 type: value_pb_js_1.Value_Type.OBJ,
                 obj: Object.fromEntries(Object.entries(v).map(([k, v]) => [k, convertFromJS(v)]))
             });
-    }
-    if (Array.isArray(v)) {
-        return (0, protobuf_1.create)(value_pb_js_1.ValueSchema, { type: value_pb_js_1.Value_Type.ARR, arr: v.map(convertFromJS) });
     }
     throw new Error("unexpected value type");
 }

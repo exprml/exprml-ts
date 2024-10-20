@@ -18,13 +18,13 @@ export function register(defStack: DefStack, def: Eval_Definition): DefStack {
 }
 
 export function find(defStack: DefStack, ident: string): DefStack | null {
-    if (!defStack.def) {
+    if (defStack == null || defStack.def == null) {
         return null;
     }
-    if (defStack.def.ident === ident) {
+    if (defStack.def?.ident === ident) {
         return defStack;
     }
-    if (!defStack.parent) {
+    if (defStack.parent == null) {
         return null;
     }
     return find(defStack.parent, ident);

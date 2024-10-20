@@ -24,6 +24,9 @@ function convertFromJS(v: unknown): Value {
     if (v == null) {
         return create(ValueSchema, {type: Value_Type.NULL});
     }
+    if (Array.isArray(v)) {
+        return create(ValueSchema, {type: Value_Type.ARR, arr: v.map(convertFromJS)});
+    }
     switch (typeof v) {
         case "boolean":
             return create(ValueSchema, {type: Value_Type.BOOL, bool: v});
@@ -36,9 +39,6 @@ function convertFromJS(v: unknown): Value {
                 type: Value_Type.OBJ,
                 obj: Object.fromEntries(Object.entries(v).map(([k, v]) => [k, convertFromJS(v)]))
             });
-    }
-    if (Array.isArray(v)) {
-        return create(ValueSchema, {type: Value_Type.ARR, arr: v.map(convertFromJS)});
     }
     throw new Error("unexpected value type");
 }

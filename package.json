@@ -3,13 +3,14 @@
   "version": "0.0.0",
   "description": "The ExprML interpreter for TypeScript and JavaScript.",
   "scripts": {
-    "test": "jest",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run build:bundle && npm run build:minify",
+    "test": "rm -rf dist/test/* && npm run build:test && jest",
+    "build": "rm -rf dist/{bundle,cjs,esm}/* && npm run build:esm && npm run build:cjs && npm run build:bundle && npm run build:minify",
     "clean": "rm -rf dist/*",
     "debug:esm": "tsc --project tsconfig.json --noCheck --outDir dist/esm",
+    "build:test": "tsc --project tsconfig.test.json --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/test",
     "build:esm": "tsc --project tsconfig.json --outDir dist/esm",
     "build:cjs": "tsc --project tsconfig.json --module commonjs --verbatimModuleSyntax false --moduleResolution node10 --outDir ./dist/cjs",
-    "build:bundle": "rollup --format umd --name eyamluate --globals '@bufbuild/protobuf/codegenv1:codegenv1' --file ./dist/bundle/index.js ./dist/esm/index.js",
+    "build:bundle": "rollup --format umd --name eyamluate --globals '@bufbuild/protobuf/codegenv1:codegenv1,@bufbuild/protobuf:protobuf,yaml:YAML' --file ./dist/bundle/index.js ./dist/esm/index.js",
     "build:minify": "terser --compress --mangle --output ./dist/bundle/index.min.js -- ./dist/bundle/index.js"
   },
   "author": "Jumpaku",
@@ -46,11 +47,7 @@
     "typescript-eslint": "^8.5.0"
   },
   "jest": {
-    "globals": {
-      "ts-jest": {
-        "useESM": true
-      }
-    },
-    "preset": "ts-jest/presets/js-with-ts-esm"
+    "verbose": true,
+    "testMatch": ["**/__tests__/**/*.js?(x)"]
   }
 }
