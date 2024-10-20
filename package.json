@@ -1,7 +1,15 @@
 {
   "name": "exprml-ts",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "The ExprML interpreter for TypeScript and JavaScript.",
+  "author": "Jumpaku",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "url": "https://github.com/exprml/exprml-ts"
+  },
+  "homepage": "https://github.com/exprml/exprml-language",
+  "keywords": ["ExprML", "expression", "interpreter", "YAML", "TypeScript"],
+
   "scripts": {
     "test": "rm -rf dist/test/* && npm run build:test && jest",
     "build": "rm -rf dist/{bundle,cjs,esm}/* && npm run build:esm && npm run build:cjs && npm run build:bundle && npm run build:minify",
@@ -13,8 +21,6 @@
     "build:bundle": "rollup --format umd --name eyamluate --globals '@bufbuild/protobuf/codegenv1:codegenv1,@bufbuild/protobuf:protobuf,yaml:YAML' --file ./dist/bundle/index.js ./dist/esm/index.js",
     "build:minify": "terser --compress --mangle --output ./dist/bundle/index.min.js -- ./dist/bundle/index.js"
   },
-  "author": "Jumpaku",
-  "license": "BSD-2-Clause",
   "dependencies": {
     "@bufbuild/protobuf": "^2.0.0",
     "yaml": "^2.5.1"
