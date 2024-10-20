@@ -6,7 +6,7 @@ import {
     EvaluateOutputSchema
 } from "./gen/pb/exprml/v1/evaluator_pb.js";
 import {create} from "@bufbuild/protobuf";
-import {Expr, Expr_Kind, Expr_Path, OpBinary_Op, OpUnary_Op, OpVariadic_Op} from "./gen/pb/exprml/v1/expr_pb.js";
+import {Expr_Kind, Expr_Path, OpBinary_Op, OpUnary_Op, OpVariadic_Op} from "./gen/pb/exprml/v1/expr_pb.js";
 import {find, newDefinition, register} from "./def_stack.js";
 import {Value, Value_Type} from "./gen/pb/exprml/v1/value_pb.js";
 import {arrValue, boolValue, numValue, objValue, strValue} from "./value.js";
@@ -14,7 +14,7 @@ import {append} from "./path.js";
 
 export class Config {
     constructor(props?: {
-        extension?: Map<string, (path: Expr_Path, args: Record<string, Expr>) => EvaluateOutput>;
+        extension?: Map<string, (path: Expr_Path, args: Record<string, Value>) => EvaluateOutput>;
         beforeEvaluate?: (input: EvaluateInput) => void;
         afterEvaluate?: (input: EvaluateInput, output: EvaluateOutput) => void;
     }) {

@@ -17,7 +17,6 @@ export class Decoder {
             });
         }
     }
-
 }
 
 function convertFromJS(v: unknown): Value {

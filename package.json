@@ -1,6 +1,6 @@
 {
   "name": "exprml-ts",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The ExprML interpreter for TypeScript and JavaScript.",
   "scripts": {
     "test": "rm -rf dist/test/* && npm run build:test && jest",

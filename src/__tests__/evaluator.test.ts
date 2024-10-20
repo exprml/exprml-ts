@@ -3,13 +3,14 @@ import jest from "@jest/globals";
 const {test, describe} = jest;
 
 import {
+    Config,
     DecodeInputSchema,
-    Decoder,
-    EvaluateInputSchema, EvaluateOutput_Status,
-    Evaluator,
+    Decoder, EncodeOutput, EncodeOutputSchema, EvaluateInput,
+    EvaluateInputSchema, EvaluateOutput, EvaluateOutput_Status, EvaluateOutputSchema,
+    Evaluator, Expr, Expr_Path, format, objValue,
     ParseInputSchema,
     Parser,
-    Value, Value_Type
+    Value, Value_Type, ValueSchema
 } from "../index.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -20,39 +21,6 @@ type Testcase = {
     yaml: string;
     wantValue?: Value;
     wantError?: boolean;
-}
-
-function provideTestcases(): Map<string, Testcase> {
-    const testcases: Map<string, Testcase> = new Map();
-    const filePaths = fs.readdirSync(path.join("testdata", "evaluator"), {recursive: true}) as string[];
-    for (const filePath of filePaths) {
-        if (filePath.endsWith(".in.yaml")) {
-            const key = filePath.replace(/\.in\.yaml$/, "");
-            const fileContent = fs.readFileSync(path.join("testdata", "evaluator", filePath), "utf-8");
-            const testcase = testcases.get(key) ?? {yaml: fileContent};
-            testcase.yaml = fileContent;
-            testcases.set(key, testcase);
-        } else if (filePath.endsWith(".want.yaml")) {
-            const key = filePath.replace(/\.want\.yaml$/, "");
-            const fileContent = fs.readFileSync(path.join("testdata", "evaluator", filePath), "utf-8");
-            const want = new Decoder().decode(create(DecodeInputSchema, {yaml: fileContent}));
-            if (want.isError) {
-                throw new Error(`fail to decode yaml: ${want.errorMessage}`);
-            }
-            const testcase = testcases.get(key) ?? {yaml: ""};
-            if ("want_value" in want.value!.obj) {
-                testcase.wantValue = want.value!.obj["want_value"];
-            }
-            if ("want_error" in want.value!.obj) {
-                testcase.wantError = want.value!.obj["want_error"].bool;
-            }
-            if (!testcase.wantValue && !testcase.wantError) {
-                throw new Error(`want_value or want_error is not found in ${path}`);
-            }
-            testcases.set(key, testcase);
-        }
-    }
-    return testcases;
 }
 
 describe("Evaluator_evaluate", () => {
@@ -90,6 +58,148 @@ describe("Evaluator_evaluate", () => {
         });
     }
 })
+
+describe("Evaluator_extension", () => {
+    const testcases = [
+        ["Ref", {
+            yaml: "$test_func",
+            wantValue: create(ValueSchema, objValue({})),
+        }],
+        ["Call", {
+            yaml: "$test_func: { $arg: '`value`' }",
+            wantValue: create(ValueSchema, objValue({
+                "$arg": create(ValueSchema, {
+                    type: Value_Type.STR,
+                    str: "value"
+                })
+            })),
+        }],
+    ] as const;
+
+    const sut = new Evaluator(new Config({
+        extension: new Map([
+            ["$test_func", (path: Expr_Path, args: Record<string, Value>): EvaluateOutput => {
+                return create(EvaluateOutputSchema, {value: objValue(args)});
+            }],
+        ]),
+    }));
+
+    for (const [name, testcase] of testcases) {
+        test(name, () => {
+            const decodeResult = new Decoder()
+                .decode(create(DecodeInputSchema, {yaml: testcase!.yaml}));
+            if (decodeResult.isError) {
+                throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
+            }
+            const parseResult = new Parser()
+                .parse(create(ParseInputSchema, {value: decodeResult.value}));
+            if (parseResult.isError) {
+                throw new Error(`failed to parse: ${parseResult.errorMessage}`);
+            }
+            const evaluateResult = sut
+                .evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
+            if (evaluateResult.status !== EvaluateOutput_Status.OK) {
+                throw new Error(`failed to parse: ${parseResult.errorMessage}`);
+            }
+
+            const msg = checkEqual([], testcase!.wantValue!, evaluateResult.value!);
+            if (msg != null) {
+                throw new Error(`failed to evaluate: ${msg}`);
+            }
+        });
+    }
+})
+
+describe("Evaluator_beforeEvaluate", () => {
+    test("Evaluator_beforeEvaluate", () => {
+        const evalPaths: string[] = [];
+        const sut = new Evaluator(new Config({
+            beforeEvaluate: (input: EvaluateInput) => {
+                evalPaths.push(format(input.expr!.path!));
+            },
+        }));
+
+        const decodeResult = new Decoder()
+            .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+        if (decodeResult.isError) {
+            throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
+        }
+        const parseResult = new Parser()
+            .parse(create(ParseInputSchema, {value: decodeResult.value}));
+        if (parseResult.isError) {
+            throw new Error(`failed to parse: ${parseResult.errorMessage}`);
+        }
+        const evaluateResult = sut
+            .evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
+        if (evaluateResult.status !== EvaluateOutput_Status.OK) {
+            throw new Error(`failed to parse: ${parseResult.errorMessage}`);
+        }
+
+        expect(evalPaths).toEqual(['/', '/cat/0', '/cat/1', '/cat/2', '/cat/3']);
+    });
+})
+
+describe("Evaluator_afterEvaluate", () => {
+    test("Evaluator_afterEvaluate", () => {
+        const evalTypes: string[] = [];
+        const sut = new Evaluator(new Config({
+            afterEvaluate: (input: EvaluateInput, output: EvaluateOutput) => {
+                evalTypes.push(Value_Type[output.value!.type]);
+            },
+        }));
+
+        const decodeResult = new Decoder()
+            .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+        if (decodeResult.isError) {
+            throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
+        }
+        const parseResult = new Parser()
+            .parse(create(ParseInputSchema, {value: decodeResult.value}));
+        if (parseResult.isError) {
+            throw new Error(`failed to parse: ${parseResult.errorMessage}`);
+        }
+        const evaluateResult = sut
+            .evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
+        if (evaluateResult.status !== EvaluateOutput_Status.OK) {
+            throw new Error(`failed to parse: ${parseResult.errorMessage}`);
+        }
+
+        expect(evalTypes).toEqual(['STR', 'STR', 'STR', 'STR', 'STR']);
+    });
+})
+
+function provideTestcases(): Map<string, Testcase> {
+    const testcases: Map<string, Testcase> = new Map();
+    const filePaths = fs.readdirSync(path.join("testdata", "evaluator"), {recursive: true}) as string[];
+    for (const filePath of filePaths) {
+        if (filePath.endsWith(".in.yaml")) {
+            const key = filePath.replace(/\.in\.yaml$/, "");
+            const fileContent = fs.readFileSync(path.join("testdata", "evaluator", filePath), "utf-8");
+            const testcase = testcases.get(key) ?? {yaml: fileContent};
+            testcase.yaml = fileContent;
+            testcases.set(key, testcase);
+        } else if (filePath.endsWith(".want.yaml")) {
+            const key = filePath.replace(/\.want\.yaml$/, "");
+            const fileContent = fs.readFileSync(path.join("testdata", "evaluator", filePath), "utf-8");
+            const want = new Decoder().decode(create(DecodeInputSchema, {yaml: fileContent}));
+            if (want.isError) {
+                throw new Error(`fail to decode yaml: ${want.errorMessage}`);
+            }
+            const testcase = testcases.get(key) ?? {yaml: ""};
+            if ("want_value" in want.value!.obj) {
+                testcase.wantValue = want.value!.obj["want_value"];
+            }
+            if ("want_error" in want.value!.obj) {
+                testcase.wantError = want.value!.obj["want_error"].bool;
+            }
+            if (!testcase.wantValue && !testcase.wantError) {
+                throw new Error(`want_value or want_error is not found in ${path}`);
+            }
+            testcases.set(key, testcase);
+        }
+    }
+    return testcases;
+}
 
 function checkEqual(path: string[], want: Value, got: Value): string | null {
     const p = "/" + path.join("/");

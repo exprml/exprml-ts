@@ -722,7 +722,7 @@
             return "/";
         }
         return [...path.pos]
-            .map((p) => p.key === "" ? `/${p.key}` : `/${p.index}`)
+            .map((p) => p.key !== "" ? `/${p.key}` : `/${p.index}`)
             .join("");
     }
 

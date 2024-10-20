@@ -1,9 +1,9 @@
 import { EvaluateInput, EvaluateOutput } from "./gen/pb/exprml/v1/evaluator_pb.js";
-import { Expr, Expr_Path } from "./gen/pb/exprml/v1/expr_pb.js";
+import { Expr_Path } from "./gen/pb/exprml/v1/expr_pb.js";
 import { Value } from "./gen/pb/exprml/v1/value_pb.js";
 export declare class Config {
     constructor(props?: {
-        extension?: Map<string, (path: Expr_Path, args: Record<string, Expr>) => EvaluateOutput>;
+        extension?: Map<string, (path: Expr_Path, args: Record<string, Value>) => EvaluateOutput>;
         beforeEvaluate?: (input: EvaluateInput) => void;
         afterEvaluate?: (input: EvaluateInput, output: EvaluateOutput) => void;
     });
