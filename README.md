@@ -132,5 +132,6 @@ evaluator.evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
 // after:  / --> {"type":"STR","str":"Hello, ExprML!"}
 ```
 
+## NPM
 
-
+https://www.npmjs.com/package/exprml-ts
