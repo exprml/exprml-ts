@@ -9,7 +9,7 @@ const value_pb_js_1 = require("./value_pb.js");
 /**
  * Describes the file exprml/v1/encoder.proto.
  */
-exports.file_exprml_v1_encoder = (0, codegenv1_1.fileDesc)("ChdleHBybWwvdjEvZW5jb2Rlci5wcm90bxIJZXhwcm1sLnYxInsKC0VuY29kZUlucHV0Ei0KBmZvcm1hdBgBIAEoDjIdLmV4cHJtbC52MS5FbmNvZGVJbnB1dC5Gb3JtYXQSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUiHAoGRm9ybWF0EggKBFlBTUwQABIICgRKU09OEAEiRwoMRW5jb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSDgoGcmVzdWx0GAMgASgJMkYKB0VuY29kZXISOwoGRW5jb2RlEhYuZXhwcm1sLnYxLkVuY29kZUlucHV0GhcuZXhwcm1sLnYxLkVuY29kZU91dHB1dCIAQmIKDWNvbS5leHBybWwudjFCDEVuY29kZXJQcm90b1ABogIDRVhYqgIJRXhwcm1sLlYxygIJRXhwcm1sXFYx4gIVRXhwcm1sXFYxXEdQQk1ldGFkYXRh6gIKRXhwcm1sOjpWMWIGcHJvdG8z", [value_pb_js_1.file_exprml_v1_value]);
+exports.file_exprml_v1_encoder = (0, codegenv1_1.fileDesc)("ChdleHBybWwvdjEvZW5jb2Rlci5wcm90bxIJZXhwcm1sLnYxInsKC0VuY29kZUlucHV0Ei0KBmZvcm1hdBgBIAEoDjIdLmV4cHJtbC52MS5FbmNvZGVJbnB1dC5Gb3JtYXQSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUiHAoGRm9ybWF0EggKBEpTT04QABIICgRZQU1MEAEiRQoMRW5jb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSDAoEdGV4dBgDIAEoCTJGCgdFbmNvZGVyEjsKBkVuY29kZRIWLmV4cHJtbC52MS5FbmNvZGVJbnB1dBoXLmV4cHJtbC52MS5FbmNvZGVPdXRwdXQiAEJiCg1jb20uZXhwcm1sLnYxQgxFbmNvZGVyUHJvdG9QAaICA0VYWKoCCUV4cHJtbC5WMcoCCUV4cHJtbFxWMeICFUV4cHJtbFxWMVxHUEJNZXRhZGF0YeoCCkV4cHJtbDo6VjFiBnByb3RvMw", [value_pb_js_1.file_exprml_v1_value]);
 /**
  * Describes the message exprml.v1.EncodeInput.
  * Use `create(EncodeInputSchema)` to create a new message.
@@ -23,17 +23,17 @@ exports.EncodeInputSchema = (0, codegenv1_1.messageDesc)(exports.file_exprml_v1_
 var EncodeInput_Format;
 (function (EncodeInput_Format) {
     /**
-     * YAML format.
-     *
-     * @generated from enum value: YAML = 0;
-     */
-    EncodeInput_Format[EncodeInput_Format["YAML"] = 0] = "YAML";
-    /**
      * JSON format.
      *
-     * @generated from enum value: JSON = 1;
+     * @generated from enum value: JSON = 0;
      */
-    EncodeInput_Format[EncodeInput_Format["JSON"] = 1] = "JSON";
+    EncodeInput_Format[EncodeInput_Format["JSON"] = 0] = "JSON";
+    /**
+     * JSON-compatible YAML format.
+     *
+     * @generated from enum value: YAML = 1;
+     */
+    EncodeInput_Format[EncodeInput_Format["YAML"] = 1] = "YAML";
 })(EncodeInput_Format || (exports.EncodeInput_Format = EncodeInput_Format = {}));
 /**
  * Describes the enum exprml.v1.EncodeInput.Format.
@@ -45,7 +45,7 @@ exports.EncodeInput_FormatSchema = (0, codegenv1_1.enumDesc)(exports.file_exprml
  */
 exports.EncodeOutputSchema = (0, codegenv1_1.messageDesc)(exports.file_exprml_v1_encoder, 1);
 /**
- * Encoder interface encodes a JSON value into a YAML or JSON string.
+ * Encoder interface encodes a JSON value into a string in JSON (or JSON-compatible YAML).
  *
  * @generated from service exprml.v1.Encoder
  */

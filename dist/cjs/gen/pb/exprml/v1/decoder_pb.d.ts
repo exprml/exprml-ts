@@ -12,11 +12,11 @@ export declare const file_exprml_v1_decoder: GenFile;
  */
 export type DecodeInput = Message<"exprml.v1.DecodeInput"> & {
     /**
-     * YAML string to decode.
+     * string in JSON (and JSON-compatible YAML).
      *
-     * @generated from field: string yaml = 1;
+     * @generated from field: string text = 1;
      */
-    yaml: string;
+    text: string;
 };
 /**
  * Describes the message exprml.v1.DecodeInput.
@@ -54,13 +54,13 @@ export type DecodeOutput = Message<"exprml.v1.DecodeOutput"> & {
  */
 export declare const DecodeOutputSchema: GenMessage<DecodeOutput>;
 /**
- * Decoder interface decodes a YAML string into a JSON value.
+ * Decoder interface decodes a string in JSON (and JSON-compatible YAML) into a JSON value.
  *
  * @generated from service exprml.v1.Decoder
  */
 export declare const Decoder: GenService<{
     /**
-     * Decode decodes a YAML string into a JSON value.
+     * Decode decodes a string in JSON (and JSON-compatible YAML) into a JSON value.
      *
      * @generated from rpc exprml.v1.Decoder.Decode
      */

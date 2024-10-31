@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file exprml/v1/encoder.proto.
  */
 export const file_exprml_v1_encoder: GenFile = /*@__PURE__*/
-  fileDesc("ChdleHBybWwvdjEvZW5jb2Rlci5wcm90bxIJZXhwcm1sLnYxInsKC0VuY29kZUlucHV0Ei0KBmZvcm1hdBgBIAEoDjIdLmV4cHJtbC52MS5FbmNvZGVJbnB1dC5Gb3JtYXQSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUiHAoGRm9ybWF0EggKBFlBTUwQABIICgRKU09OEAEiRwoMRW5jb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSDgoGcmVzdWx0GAMgASgJMkYKB0VuY29kZXISOwoGRW5jb2RlEhYuZXhwcm1sLnYxLkVuY29kZUlucHV0GhcuZXhwcm1sLnYxLkVuY29kZU91dHB1dCIAQmIKDWNvbS5leHBybWwudjFCDEVuY29kZXJQcm90b1ABogIDRVhYqgIJRXhwcm1sLlYxygIJRXhwcm1sXFYx4gIVRXhwcm1sXFYxXEdQQk1ldGFkYXRh6gIKRXhwcm1sOjpWMWIGcHJvdG8z", [file_exprml_v1_value]);
+  fileDesc("ChdleHBybWwvdjEvZW5jb2Rlci5wcm90bxIJZXhwcm1sLnYxInsKC0VuY29kZUlucHV0Ei0KBmZvcm1hdBgBIAEoDjIdLmV4cHJtbC52MS5FbmNvZGVJbnB1dC5Gb3JtYXQSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUiHAoGRm9ybWF0EggKBEpTT04QABIICgRZQU1MEAEiRQoMRW5jb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSDAoEdGV4dBgDIAEoCTJGCgdFbmNvZGVyEjsKBkVuY29kZRIWLmV4cHJtbC52MS5FbmNvZGVJbnB1dBoXLmV4cHJtbC52MS5FbmNvZGVPdXRwdXQiAEJiCg1jb20uZXhwcm1sLnYxQgxFbmNvZGVyUHJvdG9QAaICA0VYWKoCCUV4cHJtbC5WMcoCCUV4cHJtbFxWMeICFUV4cHJtbFxWMVxHUEJNZXRhZGF0YeoCCkV4cHJtbDo6VjFiBnByb3RvMw", [file_exprml_v1_value]);
 
 /**
  * EncodeInput is the input message for the Encode method.
@@ -49,18 +49,18 @@ export const EncodeInputSchema: GenMessage<EncodeInput> = /*@__PURE__*/
  */
 export enum EncodeInput_Format {
   /**
-   * YAML format.
-   *
-   * @generated from enum value: YAML = 0;
-   */
-  YAML = 0,
-
-  /**
    * JSON format.
    *
-   * @generated from enum value: JSON = 1;
+   * @generated from enum value: JSON = 0;
    */
-  JSON = 1,
+  JSON = 0,
+
+  /**
+   * JSON-compatible YAML format.
+   *
+   * @generated from enum value: YAML = 1;
+   */
+  YAML = 1,
 }
 
 /**
@@ -90,11 +90,11 @@ export type EncodeOutput = Message<"exprml.v1.EncodeOutput"> & {
   errorMessage: string;
 
   /**
-   * Encoded YAML or JSON string.
+   * Encoded string in JSON (or JSON-compatible YAML).
    *
-   * @generated from field: string result = 3;
+   * @generated from field: string text = 3;
    */
-  result: string;
+  text: string;
 };
 
 /**
@@ -105,13 +105,13 @@ export const EncodeOutputSchema: GenMessage<EncodeOutput> = /*@__PURE__*/
   messageDesc(file_exprml_v1_encoder, 1);
 
 /**
- * Encoder interface encodes a JSON value into a YAML or JSON string.
+ * Encoder interface encodes a JSON value into a string in JSON (or JSON-compatible YAML).
  *
  * @generated from service exprml.v1.Encoder
  */
 export const Encoder: GenService<{
   /**
-   * Encode encodes a JSON value into a YAML or JSON string.
+   * Encode encodes a JSON value into a string in JSON (or JSON-compatible YAML).
    *
    * @generated from rpc exprml.v1.Encoder.Encode
    */

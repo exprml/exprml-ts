@@ -13,9 +13,9 @@ export class Encoder {
         try {
             switch (input.format) {
                 case EncodeInput_Format.YAML:
-                    return create(EncodeOutputSchema, {result: YAML.stringify(convertFromJS(input.value!))});
+                    return create(EncodeOutputSchema, {text: YAML.stringify(convertFromJS(input.value!))});
                 case EncodeInput_Format.JSON:
-                    return create(EncodeOutputSchema, {result: JSON.stringify(convertFromJS(input.value!))});
+                    return create(EncodeOutputSchema, {text: JSON.stringify(convertFromJS(input.value!))});
                 default:
                     return create(EncodeOutputSchema, {
                         isError: true,

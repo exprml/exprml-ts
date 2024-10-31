@@ -13,7 +13,7 @@ class Decoder {
         try {
             return (0, protobuf_1.create)(decoder_pb_js_1.DecodeOutputSchema, {
                 isError: false,
-                value: convertFromJS(yaml_1.default.parse(input.yaml)),
+                value: convertFromJS(yaml_1.default.parse(input.text)),
             });
         }
         catch (e) {

@@ -36,17 +36,17 @@ export declare const EncodeInputSchema: GenMessage<EncodeInput>;
  */
 export declare enum EncodeInput_Format {
     /**
-     * YAML format.
-     *
-     * @generated from enum value: YAML = 0;
-     */
-    YAML = 0,
-    /**
      * JSON format.
      *
-     * @generated from enum value: JSON = 1;
+     * @generated from enum value: JSON = 0;
      */
-    JSON = 1
+    JSON = 0,
+    /**
+     * JSON-compatible YAML format.
+     *
+     * @generated from enum value: YAML = 1;
+     */
+    YAML = 1
 }
 /**
  * Describes the enum exprml.v1.EncodeInput.Format.
@@ -71,11 +71,11 @@ export type EncodeOutput = Message<"exprml.v1.EncodeOutput"> & {
      */
     errorMessage: string;
     /**
-     * Encoded YAML or JSON string.
+     * Encoded string in JSON (or JSON-compatible YAML).
      *
-     * @generated from field: string result = 3;
+     * @generated from field: string text = 3;
      */
-    result: string;
+    text: string;
 };
 /**
  * Describes the message exprml.v1.EncodeOutput.
@@ -83,13 +83,13 @@ export type EncodeOutput = Message<"exprml.v1.EncodeOutput"> & {
  */
 export declare const EncodeOutputSchema: GenMessage<EncodeOutput>;
 /**
- * Encoder interface encodes a JSON value into a YAML or JSON string.
+ * Encoder interface encodes a JSON value into a string in JSON (or JSON-compatible YAML).
  *
  * @generated from service exprml.v1.Encoder
  */
 export declare const Encoder: GenService<{
     /**
-     * Encode encodes a JSON value into a YAML or JSON string.
+     * Encode encodes a JSON value into a string in JSON (or JSON-compatible YAML).
      *
      * @generated from rpc exprml.v1.Encoder.Encode
      */

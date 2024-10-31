@@ -34,7 +34,7 @@ describe("Parser_error", () => {
             const testcase = testcases.get(name);
 
             const decodeResult = new Decoder()
-                .decode(create(DecodeInputSchema, {yaml: testcase!.yaml}));
+                .decode(create(DecodeInputSchema, {text: testcase!.yaml}));
             if (decodeResult.isError) {
                 throw new Error("Expected error but got success");
             }

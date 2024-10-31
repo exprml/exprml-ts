@@ -1,15 +1,19 @@
 # exprml-ts
 
 `exprml-ts` is a TypeScript and JavaScript library implementing an ExprML interpreter.
-The ExprML is a programming language that can evaluate expressions represented in the YAML format.
+The ExprML is a programming language that can evaluate expressions represented in JSON (and JSON-compatible YAML).
 
-The language specification is available at https://github.com/exprml/exprml-language .
+The ExprML language specification is available at https://github.com/exprml/exprml-language .
 
 ## Installation
 
 ```bash
 npm install @bufbuild/protobuf@2.2.0 exprml-ts
 ```
+
+### NPM
+
+https://www.npmjs.com/package/exprml-ts
 
 ## Examples
 
@@ -28,20 +32,20 @@ import {
 } from "exprml-ts";
 import {create} from "@bufbuild/protobuf";
 
-// Decode the YAML string to a JSON value of JavaScript.
+// Decode the source string to a JSON value of JavaScript.
 const decodeResult = new Decoder()
-    .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+    .decode(create(DecodeInputSchema, {text: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
 // Parse an AST from the JSON value.
 const parseResult = new Parser()
     .parse(create(ParseInputSchema, {value: decodeResult.value}));
 // Evaluate expression of the AST as a JSON value.
 const evaluateResult = new Evaluator()
     .evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
-// Encode the JSON value to a YAML string.
+// Encode the JSON value to a string.
 const encodeResult = new Encoder()
     .encode(create(EncodeInputSchema, {value: evaluateResult.value}));
 
-console.log(encodeResult.result);
+console.log(encodeResult.text);
 // => Hello, ExprML!
 ```
 
@@ -62,7 +66,7 @@ import {
 import {create} from "@bufbuild/protobuf";
 
 const decodeResult = new Decoder()
-    .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+    .decode(create(DecodeInputSchema, {text: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
 
 const parseResult = new Parser()
     .parse(create(ParseInputSchema, {value: decodeResult.value}));
@@ -81,7 +85,7 @@ const evaluator = new Evaluator(new Config({
 const evaluateResult = evaluator.evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
 
 const encodeResult = new Encoder().encode(create(EncodeInputSchema, {value: evaluateResult.value}));
-console.log(encodeResult.result);
+console.log(encodeResult.text);
 // => Hello, Extension!
 ```
 
@@ -101,7 +105,7 @@ import {
 import {create, toJsonString} from "@bufbuild/protobuf";
 
 const decodeResult = new Decoder()
-    .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+    .decode(create(DecodeInputSchema, {text: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
 
 const parseResult = new Parser()
     .parse(create(ParseInputSchema, {value: decodeResult.value}));
@@ -132,6 +136,5 @@ evaluator.evaluateExpr(create(EvaluateInputSchema, {expr: parseResult.expr}));
 // after:  / --> {"type":"STR","str":"Hello, ExprML!"}
 ```
 
-## NPM
 
-https://www.npmjs.com/package/exprml-ts
+

@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file exprml/v1/evaluator.proto.
  */
 export const file_exprml_v1_evaluator: GenFile = /*@__PURE__*/
-  fileDesc("ChlleHBybWwvdjEvZXZhbHVhdG9yLnByb3RvEglleHBybWwudjEiWAoIRGVmU3RhY2sSIwoGcGFyZW50GAEgASgLMhMuZXhwcm1sLnYxLkRlZlN0YWNrEicKA2RlZhgCIAEoCzIaLmV4cHJtbC52MS5FdmFsLkRlZmluaXRpb24iVgoNRXZhbHVhdGVJbnB1dBImCglkZWZfc3RhY2sYASABKAsyEy5leHBybWwudjEuRGVmU3RhY2sSHQoEZXhwchgCIAEoCzIPLmV4cHJtbC52MS5FeHByIoUDCg5FdmFsdWF0ZU91dHB1dBIwCgZzdGF0dXMYASABKA4yIC5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQuU3RhdHVzEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSKAoKZXJyb3JfcGF0aBgDIAEoCzIULmV4cHJtbC52MS5FeHByLlBhdGgSHwoFdmFsdWUYBCABKAsyEC5leHBybWwudjEuVmFsdWUi3gEKBlN0YXR1cxIGCgJPSxAAEhEKDUlOVkFMSURfSU5ERVgQZBIPCgtJTlZBTElEX0tFWRBlEhMKD1VORVhQRUNURURfVFlQRRBmEhUKEUFSR1VNRU5UX01JU01BVENIEGcSGAoUQ0FTRVNfTk9UX0VYSEFVU1RJVkUQaBIXChNSRUZFUkVOQ0VfTk9UX0ZPVU5EEGkSEgoOTk9UX0NPTVBBUkFCTEUQahIVChFOT1RfRklOSVRFX05VTUJFUhBrEgsKB0FCT1JURUQQbBIRCg1VTktOT1dOX0VSUk9SEG0y+gcKCUV2YWx1YXRvchJFCgxFdmFsdWF0ZUV4cHISGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkUKDEV2YWx1YXRlRXZhbBIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRwoORXZhbHVhdGVTY2FsYXISGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkQKC0V2YWx1YXRlUmVmEhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJECgtFdmFsdWF0ZU9iahIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRAoLRXZhbHVhdGVBcnISGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkUKDEV2YWx1YXRlSnNvbhIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRQoMRXZhbHVhdGVJdGVyEhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJFCgxFdmFsdWF0ZUVsZW0SGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkUKDEV2YWx1YXRlQ2FsbBIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRgoNRXZhbHVhdGVDYXNlcxIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASSAoPRXZhbHVhdGVPcFVuYXJ5EhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJJChBFdmFsdWF0ZU9wQmluYXJ5EhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJLChJFdmFsdWF0ZU9wVmFyaWFkaWMSGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAQmQKDWNvbS5leHBybWwudjFCDkV2YWx1YXRvclByb3RvUAGiAgNFWFiqAglFeHBybWwuVjHKAglFeHBybWxcVjHiAhVFeHBybWxcVjFcR1BCTWV0YWRhdGHqAgpFeHBybWw6OlYxYgZwcm90bzM", [file_exprml_v1_expr, file_exprml_v1_value]);
+  fileDesc("ChlleHBybWwvdjEvZXZhbHVhdG9yLnByb3RvEglleHBybWwudjEiWAoIRGVmU3RhY2sSIwoGcGFyZW50GAEgASgLMhMuZXhwcm1sLnYxLkRlZlN0YWNrEicKA2RlZhgCIAEoCzIaLmV4cHJtbC52MS5FdmFsLkRlZmluaXRpb24iVgoNRXZhbHVhdGVJbnB1dBImCglkZWZfc3RhY2sYASABKAsyEy5leHBybWwudjEuRGVmU3RhY2sSHQoEZXhwchgCIAEoCzIPLmV4cHJtbC52MS5FeHByIoUDCg5FdmFsdWF0ZU91dHB1dBIwCgZzdGF0dXMYASABKA4yIC5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQuU3RhdHVzEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSKAoKZXJyb3JfcGF0aBgDIAEoCzIULmV4cHJtbC52MS5FeHByLlBhdGgSHwoFdmFsdWUYBCABKAsyEC5leHBybWwudjEuVmFsdWUi3gEKBlN0YXR1cxIGCgJPSxAAEhEKDUlOVkFMSURfSU5ERVgQZBIPCgtJTlZBTElEX0tFWRBlEhMKD1VORVhQRUNURURfVFlQRRBmEhUKEUFSR1VNRU5UX01JU01BVENIEGcSGAoUQ0FTRVNfTk9UX0VYSEFVU1RJVkUQaBIXChNSRUZFUkVOQ0VfTk9UX0ZPVU5EEGkSEgoOTk9UX0NPTVBBUkFCTEUQahIVChFOT1RfRklOSVRFX05VTUJFUhBrEgsKB0FCT1JURUQQbBIRCg1VTktOT1dOX0VSUk9SEG0yTgoJRXZhbHVhdG9yEkEKCEV2YWx1YXRlEhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiAEJkCg1jb20uZXhwcm1sLnYxQg5FdmFsdWF0b3JQcm90b1ABogIDRVhYqgIJRXhwcm1sLlYxygIJRXhwcm1sXFYx4gIVRXhwcm1sXFYxXEdQQk1ldGFkYXRh6gIKRXhwcm1sOjpWMWIGcHJvdG8z", [file_exprml_v1_expr, file_exprml_v1_value]);
 
 /**
  * FunDefList is a list of function definitions.
@@ -213,139 +213,9 @@ export const Evaluator: GenService<{
   /**
    * EvaluateExpr evaluates an expression.
    *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateExpr
+   * @generated from rpc exprml.v1.Evaluator.Evaluate
    */
-  evaluateExpr: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateEval evaluates an Eval expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateEval
-   */
-  evaluateEval: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateScalar evaluates a Scalar expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateScalar
-   */
-  evaluateScalar: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateRef evaluates an Ref expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateRef
-   */
-  evaluateRef: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateObj evaluates an Obj expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateObj
-   */
-  evaluateObj: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateArr evaluates an Arr expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateArr
-   */
-  evaluateArr: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateJson evaluates a Json expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateJson
-   */
-  evaluateJson: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateIter evaluates a Iter expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateIter
-   */
-  evaluateIter: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateElem evaluates a Elem expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateElem
-   */
-  evaluateElem: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateCall evaluates a Call expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateCall
-   */
-  evaluateCall: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateCases evaluates a Cases expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateCases
-   */
-  evaluateCases: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateOpUnary evaluates an OpUnary expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateOpUnary
-   */
-  evaluateOpUnary: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateOpBinary evaluates an OpBinary expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateOpBinary
-   */
-  evaluateOpBinary: {
-    methodKind: "unary";
-    input: typeof EvaluateInputSchema;
-    output: typeof EvaluateOutputSchema;
-  },
-  /**
-   * EvaluateOpVariadic evaluates an OpVariadic expression.
-   *
-   * @generated from rpc exprml.v1.Evaluator.EvaluateOpVariadic
-   */
-  evaluateOpVariadic: {
+  evaluate: {
     methodKind: "unary";
     input: typeof EvaluateInputSchema;
     output: typeof EvaluateOutputSchema;

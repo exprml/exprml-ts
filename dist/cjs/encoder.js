@@ -13,9 +13,9 @@ class Encoder {
         try {
             switch (input.format) {
                 case encoder_pb_js_1.EncodeInput_Format.YAML:
-                    return (0, protobuf_1.create)(encoder_pb_js_1.EncodeOutputSchema, { result: yaml_1.default.stringify(convertFromJS(input.value)) });
+                    return (0, protobuf_1.create)(encoder_pb_js_1.EncodeOutputSchema, { text: yaml_1.default.stringify(convertFromJS(input.value)) });
                 case encoder_pb_js_1.EncodeInput_Format.JSON:
-                    return (0, protobuf_1.create)(encoder_pb_js_1.EncodeOutputSchema, { result: JSON.stringify(convertFromJS(input.value)) });
+                    return (0, protobuf_1.create)(encoder_pb_js_1.EncodeOutputSchema, { text: JSON.stringify(convertFromJS(input.value)) });
                 default:
                     return (0, protobuf_1.create)(encoder_pb_js_1.EncodeOutputSchema, {
                         isError: true,

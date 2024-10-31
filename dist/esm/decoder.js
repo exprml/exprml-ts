@@ -7,7 +7,7 @@ export class Decoder {
         try {
             return create(DecodeOutputSchema, {
                 isError: false,
-                value: convertFromJS(YAML.parse(input.yaml)),
+                value: convertFromJS(YAML.parse(input.text)),
             });
         }
         catch (e) {

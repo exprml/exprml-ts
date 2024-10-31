@@ -1,6 +1,6 @@
 {
   "name": "exprml-ts",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "The ExprML interpreter for TypeScript and JavaScript.",
   "author": "Jumpaku",
   "license": "BSD-2-Clause",

@@ -30,7 +30,7 @@ describe("Evaluator_evaluate", () => {
             const testcase = testcases.get(name);
 
             const decodeResult = new Decoder()
-                .decode(create(DecodeInputSchema, {yaml: testcase!.yaml}));
+                .decode(create(DecodeInputSchema, {text: testcase!.yaml}));
             if (decodeResult.isError) {
                 throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
             }
@@ -87,7 +87,7 @@ describe("Evaluator_extension", () => {
     for (const [name, testcase] of testcases) {
         test(name, () => {
             const decodeResult = new Decoder()
-                .decode(create(DecodeInputSchema, {yaml: testcase!.yaml}));
+                .decode(create(DecodeInputSchema, {text: testcase!.yaml}));
             if (decodeResult.isError) {
                 throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
             }
@@ -120,7 +120,7 @@ describe("Evaluator_beforeEvaluate", () => {
         }));
 
         const decodeResult = new Decoder()
-            .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+            .decode(create(DecodeInputSchema, {text: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
         if (decodeResult.isError) {
             throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
         }
@@ -149,7 +149,7 @@ describe("Evaluator_afterEvaluate", () => {
         }));
 
         const decodeResult = new Decoder()
-            .decode(create(DecodeInputSchema, {yaml: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
+            .decode(create(DecodeInputSchema, {text: "cat: ['`Hello`', '`, `', '`ExprML`', '`!`']"}));
         if (decodeResult.isError) {
             throw new Error(`failed to decode yaml: ${decodeResult.errorMessage}`);
         }
@@ -181,7 +181,7 @@ function provideTestcases(): Map<string, Testcase> {
         } else if (filePath.endsWith(".want.yaml")) {
             const key = filePath.replace(/\.want\.yaml$/, "");
             const fileContent = fs.readFileSync(path.join("testdata", "evaluator", filePath), "utf-8");
-            const want = new Decoder().decode(create(DecodeInputSchema, {yaml: fileContent}));
+            const want = new Decoder().decode(create(DecodeInputSchema, {text: fileContent}));
             if (want.isError) {
                 throw new Error(`fail to decode yaml: ${want.errorMessage}`);
             }

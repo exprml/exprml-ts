@@ -77,7 +77,7 @@
     /**
      * Describes the file exprml/v1/encoder.proto.
      */
-    const file_exprml_v1_encoder = /*@__PURE__*/ codegenv1.fileDesc("ChdleHBybWwvdjEvZW5jb2Rlci5wcm90bxIJZXhwcm1sLnYxInsKC0VuY29kZUlucHV0Ei0KBmZvcm1hdBgBIAEoDjIdLmV4cHJtbC52MS5FbmNvZGVJbnB1dC5Gb3JtYXQSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUiHAoGRm9ybWF0EggKBFlBTUwQABIICgRKU09OEAEiRwoMRW5jb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSDgoGcmVzdWx0GAMgASgJMkYKB0VuY29kZXISOwoGRW5jb2RlEhYuZXhwcm1sLnYxLkVuY29kZUlucHV0GhcuZXhwcm1sLnYxLkVuY29kZU91dHB1dCIAQmIKDWNvbS5leHBybWwudjFCDEVuY29kZXJQcm90b1ABogIDRVhYqgIJRXhwcm1sLlYxygIJRXhwcm1sXFYx4gIVRXhwcm1sXFYxXEdQQk1ldGFkYXRh6gIKRXhwcm1sOjpWMWIGcHJvdG8z", [file_exprml_v1_value]);
+    const file_exprml_v1_encoder = /*@__PURE__*/ codegenv1.fileDesc("ChdleHBybWwvdjEvZW5jb2Rlci5wcm90bxIJZXhwcm1sLnYxInsKC0VuY29kZUlucHV0Ei0KBmZvcm1hdBgBIAEoDjIdLmV4cHJtbC52MS5FbmNvZGVJbnB1dC5Gb3JtYXQSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUiHAoGRm9ybWF0EggKBEpTT04QABIICgRZQU1MEAEiRQoMRW5jb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSDAoEdGV4dBgDIAEoCTJGCgdFbmNvZGVyEjsKBkVuY29kZRIWLmV4cHJtbC52MS5FbmNvZGVJbnB1dBoXLmV4cHJtbC52MS5FbmNvZGVPdXRwdXQiAEJiCg1jb20uZXhwcm1sLnYxQgxFbmNvZGVyUHJvdG9QAaICA0VYWKoCCUV4cHJtbC5WMcoCCUV4cHJtbFxWMeICFUV4cHJtbFxWMVxHUEJNZXRhZGF0YeoCCkV4cHJtbDo6VjFiBnByb3RvMw", [file_exprml_v1_value]);
     /**
      * Describes the message exprml.v1.EncodeInput.
      * Use `create(EncodeInputSchema)` to create a new message.
@@ -91,17 +91,17 @@
     exports.EncodeInput_Format = void 0;
     (function (EncodeInput_Format) {
         /**
-         * YAML format.
-         *
-         * @generated from enum value: YAML = 0;
-         */
-        EncodeInput_Format[EncodeInput_Format["YAML"] = 0] = "YAML";
-        /**
          * JSON format.
          *
-         * @generated from enum value: JSON = 1;
+         * @generated from enum value: JSON = 0;
          */
-        EncodeInput_Format[EncodeInput_Format["JSON"] = 1] = "JSON";
+        EncodeInput_Format[EncodeInput_Format["JSON"] = 0] = "JSON";
+        /**
+         * JSON-compatible YAML format.
+         *
+         * @generated from enum value: YAML = 1;
+         */
+        EncodeInput_Format[EncodeInput_Format["YAML"] = 1] = "YAML";
     })(exports.EncodeInput_Format || (exports.EncodeInput_Format = {}));
     /**
      * Describes the enum exprml.v1.EncodeInput.Format.
@@ -119,7 +119,7 @@
     /**
      * Describes the file exprml/v1/decoder.proto.
      */
-    const file_exprml_v1_decoder = /*@__PURE__*/ codegenv1.fileDesc("ChdleHBybWwvdjEvZGVjb2Rlci5wcm90bxIJZXhwcm1sLnYxIhsKC0RlY29kZUlucHV0EgwKBHlhbWwYASABKAkiWAoMRGVjb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUyRgoHRGVjb2RlchI7CgZEZWNvZGUSFi5leHBybWwudjEuRGVjb2RlSW5wdXQaFy5leHBybWwudjEuRGVjb2RlT3V0cHV0IgBCYgoNY29tLmV4cHJtbC52MUIMRGVjb2RlclByb3RvUAGiAgNFWFiqAglFeHBybWwuVjHKAglFeHBybWxcVjHiAhVFeHBybWxcVjFcR1BCTWV0YWRhdGHqAgpFeHBybWw6OlYxYgZwcm90bzM", [file_exprml_v1_value]);
+    const file_exprml_v1_decoder = /*@__PURE__*/ codegenv1.fileDesc("ChdleHBybWwvdjEvZGVjb2Rlci5wcm90bxIJZXhwcm1sLnYxIhsKC0RlY29kZUlucHV0EgwKBHRleHQYASABKAkiWAoMRGVjb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUyRgoHRGVjb2RlchI7CgZEZWNvZGUSFi5leHBybWwudjEuRGVjb2RlSW5wdXQaFy5leHBybWwudjEuRGVjb2RlT3V0cHV0IgBCYgoNY29tLmV4cHJtbC52MUIMRGVjb2RlclByb3RvUAGiAgNFWFiqAglFeHBybWwuVjHKAglFeHBybWxcVjHiAhVFeHBybWxcVjFcR1BCTWV0YWRhdGHqAgpFeHBybWw6OlYxYgZwcm90bzM", [file_exprml_v1_value]);
     /**
      * Describes the message exprml.v1.DecodeInput.
      * Use `create(DecodeInputSchema)` to create a new message.
@@ -517,7 +517,7 @@
     /**
      * Describes the file exprml/v1/evaluator.proto.
      */
-    const file_exprml_v1_evaluator = /*@__PURE__*/ codegenv1.fileDesc("ChlleHBybWwvdjEvZXZhbHVhdG9yLnByb3RvEglleHBybWwudjEiWAoIRGVmU3RhY2sSIwoGcGFyZW50GAEgASgLMhMuZXhwcm1sLnYxLkRlZlN0YWNrEicKA2RlZhgCIAEoCzIaLmV4cHJtbC52MS5FdmFsLkRlZmluaXRpb24iVgoNRXZhbHVhdGVJbnB1dBImCglkZWZfc3RhY2sYASABKAsyEy5leHBybWwudjEuRGVmU3RhY2sSHQoEZXhwchgCIAEoCzIPLmV4cHJtbC52MS5FeHByIoUDCg5FdmFsdWF0ZU91dHB1dBIwCgZzdGF0dXMYASABKA4yIC5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQuU3RhdHVzEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSKAoKZXJyb3JfcGF0aBgDIAEoCzIULmV4cHJtbC52MS5FeHByLlBhdGgSHwoFdmFsdWUYBCABKAsyEC5leHBybWwudjEuVmFsdWUi3gEKBlN0YXR1cxIGCgJPSxAAEhEKDUlOVkFMSURfSU5ERVgQZBIPCgtJTlZBTElEX0tFWRBlEhMKD1VORVhQRUNURURfVFlQRRBmEhUKEUFSR1VNRU5UX01JU01BVENIEGcSGAoUQ0FTRVNfTk9UX0VYSEFVU1RJVkUQaBIXChNSRUZFUkVOQ0VfTk9UX0ZPVU5EEGkSEgoOTk9UX0NPTVBBUkFCTEUQahIVChFOT1RfRklOSVRFX05VTUJFUhBrEgsKB0FCT1JURUQQbBIRCg1VTktOT1dOX0VSUk9SEG0y+gcKCUV2YWx1YXRvchJFCgxFdmFsdWF0ZUV4cHISGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkUKDEV2YWx1YXRlRXZhbBIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRwoORXZhbHVhdGVTY2FsYXISGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkQKC0V2YWx1YXRlUmVmEhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJECgtFdmFsdWF0ZU9iahIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRAoLRXZhbHVhdGVBcnISGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkUKDEV2YWx1YXRlSnNvbhIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRQoMRXZhbHVhdGVJdGVyEhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJFCgxFdmFsdWF0ZUVsZW0SGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAEkUKDEV2YWx1YXRlQ2FsbBIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASRgoNRXZhbHVhdGVDYXNlcxIYLmV4cHJtbC52MS5FdmFsdWF0ZUlucHV0GhkuZXhwcm1sLnYxLkV2YWx1YXRlT3V0cHV0IgASSAoPRXZhbHVhdGVPcFVuYXJ5EhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJJChBFdmFsdWF0ZU9wQmluYXJ5EhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiABJLChJFdmFsdWF0ZU9wVmFyaWFkaWMSGC5leHBybWwudjEuRXZhbHVhdGVJbnB1dBoZLmV4cHJtbC52MS5FdmFsdWF0ZU91dHB1dCIAQmQKDWNvbS5leHBybWwudjFCDkV2YWx1YXRvclByb3RvUAGiAgNFWFiqAglFeHBybWwuVjHKAglFeHBybWxcVjHiAhVFeHBybWxcVjFcR1BCTWV0YWRhdGHqAgpFeHBybWw6OlYxYgZwcm90bzM", [file_exprml_v1_expr, file_exprml_v1_value]);
+    const file_exprml_v1_evaluator = /*@__PURE__*/ codegenv1.fileDesc("ChlleHBybWwvdjEvZXZhbHVhdG9yLnByb3RvEglleHBybWwudjEiWAoIRGVmU3RhY2sSIwoGcGFyZW50GAEgASgLMhMuZXhwcm1sLnYxLkRlZlN0YWNrEicKA2RlZhgCIAEoCzIaLmV4cHJtbC52MS5FdmFsLkRlZmluaXRpb24iVgoNRXZhbHVhdGVJbnB1dBImCglkZWZfc3RhY2sYASABKAsyEy5leHBybWwudjEuRGVmU3RhY2sSHQoEZXhwchgCIAEoCzIPLmV4cHJtbC52MS5FeHByIoUDCg5FdmFsdWF0ZU91dHB1dBIwCgZzdGF0dXMYASABKA4yIC5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQuU3RhdHVzEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSKAoKZXJyb3JfcGF0aBgDIAEoCzIULmV4cHJtbC52MS5FeHByLlBhdGgSHwoFdmFsdWUYBCABKAsyEC5leHBybWwudjEuVmFsdWUi3gEKBlN0YXR1cxIGCgJPSxAAEhEKDUlOVkFMSURfSU5ERVgQZBIPCgtJTlZBTElEX0tFWRBlEhMKD1VORVhQRUNURURfVFlQRRBmEhUKEUFSR1VNRU5UX01JU01BVENIEGcSGAoUQ0FTRVNfTk9UX0VYSEFVU1RJVkUQaBIXChNSRUZFUkVOQ0VfTk9UX0ZPVU5EEGkSEgoOTk9UX0NPTVBBUkFCTEUQahIVChFOT1RfRklOSVRFX05VTUJFUhBrEgsKB0FCT1JURUQQbBIRCg1VTktOT1dOX0VSUk9SEG0yTgoJRXZhbHVhdG9yEkEKCEV2YWx1YXRlEhguZXhwcm1sLnYxLkV2YWx1YXRlSW5wdXQaGS5leHBybWwudjEuRXZhbHVhdGVPdXRwdXQiAEJkCg1jb20uZXhwcm1sLnYxQg5FdmFsdWF0b3JQcm90b1ABogIDRVhYqgIJRXhwcm1sLlYxygIJRXhwcm1sXFYx4gIVRXhwcm1sXFYxXEdQQk1ldGFkYXRh6gIKRXhwcm1sOjpWMWIGcHJvdG8z", [file_exprml_v1_expr, file_exprml_v1_value]);
     /**
      * Describes the message exprml.v1.DefStack.
      * Use `create(DefStackSchema)` to create a new message.
@@ -635,7 +635,7 @@
             try {
                 return protobuf.create(DecodeOutputSchema, {
                     isError: false,
-                    value: convertFromJS$1(YAML.parse(input.yaml)),
+                    value: convertFromJS$1(YAML.parse(input.text)),
                 });
             }
             catch (e) {
@@ -674,9 +674,9 @@
             try {
                 switch (input.format) {
                     case exports.EncodeInput_Format.YAML:
-                        return protobuf.create(EncodeOutputSchema, { result: YAML.stringify(convertFromJS(input.value)) });
+                        return protobuf.create(EncodeOutputSchema, { text: YAML.stringify(convertFromJS(input.value)) });
                     case exports.EncodeInput_Format.JSON:
-                        return protobuf.create(EncodeOutputSchema, { result: JSON.stringify(convertFromJS(input.value)) });
+                        return protobuf.create(EncodeOutputSchema, { text: JSON.stringify(convertFromJS(input.value)) });
                     default:
                         return protobuf.create(EncodeOutputSchema, {
                             isError: true,

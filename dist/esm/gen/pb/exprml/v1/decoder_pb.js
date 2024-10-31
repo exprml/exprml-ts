@@ -6,7 +6,7 @@ import { file_exprml_v1_value } from "./value_pb.js";
 /**
  * Describes the file exprml/v1/decoder.proto.
  */
-export const file_exprml_v1_decoder = /*@__PURE__*/ fileDesc("ChdleHBybWwvdjEvZGVjb2Rlci5wcm90bxIJZXhwcm1sLnYxIhsKC0RlY29kZUlucHV0EgwKBHlhbWwYASABKAkiWAoMRGVjb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUyRgoHRGVjb2RlchI7CgZEZWNvZGUSFi5leHBybWwudjEuRGVjb2RlSW5wdXQaFy5leHBybWwudjEuRGVjb2RlT3V0cHV0IgBCYgoNY29tLmV4cHJtbC52MUIMRGVjb2RlclByb3RvUAGiAgNFWFiqAglFeHBybWwuVjHKAglFeHBybWxcVjHiAhVFeHBybWxcVjFcR1BCTWV0YWRhdGHqAgpFeHBybWw6OlYxYgZwcm90bzM", [file_exprml_v1_value]);
+export const file_exprml_v1_decoder = /*@__PURE__*/ fileDesc("ChdleHBybWwvdjEvZGVjb2Rlci5wcm90bxIJZXhwcm1sLnYxIhsKC0RlY29kZUlucHV0EgwKBHRleHQYASABKAkiWAoMRGVjb2RlT3V0cHV0EhAKCGlzX2Vycm9yGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSHwoFdmFsdWUYAyABKAsyEC5leHBybWwudjEuVmFsdWUyRgoHRGVjb2RlchI7CgZEZWNvZGUSFi5leHBybWwudjEuRGVjb2RlSW5wdXQaFy5leHBybWwudjEuRGVjb2RlT3V0cHV0IgBCYgoNY29tLmV4cHJtbC52MUIMRGVjb2RlclByb3RvUAGiAgNFWFiqAglFeHBybWwuVjHKAglFeHBybWxcVjHiAhVFeHBybWxcVjFcR1BCTWV0YWRhdGHqAgpFeHBybWw6OlYxYgZwcm90bzM", [file_exprml_v1_value]);
 /**
  * Describes the message exprml.v1.DecodeInput.
  * Use `create(DecodeInputSchema)` to create a new message.
@@ -18,7 +18,7 @@ export const DecodeInputSchema = /*@__PURE__*/ messageDesc(file_exprml_v1_decode
  */
 export const DecodeOutputSchema = /*@__PURE__*/ messageDesc(file_exprml_v1_decoder, 1);
 /**
- * Decoder interface decodes a YAML string into a JSON value.
+ * Decoder interface decodes a string in JSON (and JSON-compatible YAML) into a JSON value.
  *
  * @generated from service exprml.v1.Decoder
  */
